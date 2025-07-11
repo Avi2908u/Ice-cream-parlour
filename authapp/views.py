@@ -49,3 +49,5 @@ class SummaryView(APIView):
             'total_revenue': total_revenue,
             'number_of_vendors': vendor_count
         })
+
+
