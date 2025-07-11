@@ -13,7 +13,7 @@ def vendor_dashboard(request):
     return render(request, 'vendor.html')
 
 def customer_dashboard(request):
-    return render(request, 'customer.html')
+    return render(request, 'customer_dashboard.html')
 def product_list(request):
     products = Product.objects.all()
     return render(request, 'product_list.html', {'products': products})
