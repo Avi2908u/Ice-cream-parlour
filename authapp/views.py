@@ -1,4 +1,5 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
 
 # Create your views here.
 from rest_framework import generics
@@ -51,3 +52,19 @@ class SummaryView(APIView):
         })
 
 
+def login_page(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user_type = request.POST.get('user_type')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user:
+            login(request, user)
+
+            return render(request, 'login.html', {'error': 'Invalid user type'})
+        else:
+            return render(request, 'login.html', {'error': 'Invalid credentials'})
+
+    return render(request, 'login.html')

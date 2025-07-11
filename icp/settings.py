@@ -69,7 +69,7 @@ ROOT_URLCONF = 'icp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'icp', 'authapp', 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
