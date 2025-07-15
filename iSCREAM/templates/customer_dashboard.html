@@ -456,10 +456,6 @@
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
             <ul class="nav-links">
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Shop</a></li>
-                <li><a href="#">About Us</a></li>
-                <li><a href="#">Contact</a></li>
                 <li><a href="#" id="cart-icon" onclick="openCart()">Cart (0)</a></li>
                 <li><button class="logout-btn" onclick="handleLogout()">Logout</button></li>
             </ul>
@@ -638,8 +634,8 @@
                 `;
                 cartItems.appendChild(li);
             });
-            document.querySelector('.cart-total').textContent = Total: $${total.toFixed(2)};
-            document.getElementById('cart-icon').textContent = Cart (${cart.reduce((a,b)=>a+b.quantity,0)});
+            document.querySelector('.cart-total').textContent = `Total: $${total.toFixed(2)}`;
+            document.getElementById('cart-icon').textContent = `Cart (${cart.reduce((a,b)=>a+b.quantity,0)})`;
         }
 
         function removeFromCart(i) {
@@ -666,7 +662,7 @@
 
         function handleLogout() {
             // In a real application, this would clear session data
-            window.location.href = 'login.html';
+            window.location.href = '/login/';
         }
 
         // On page load

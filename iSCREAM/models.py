@@ -14,7 +14,7 @@ class User(AbstractUser):
 
 class Vendor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    shop_name = models.CharField(max_length=100)
+    shop_name = models.CharField(max_length=100, default='Unnamed Vendor')
 
     def __str__(self):
         return self.shop_name

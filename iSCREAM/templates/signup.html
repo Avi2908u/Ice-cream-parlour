@@ -363,8 +363,8 @@
                 <form id="signupForm" method="POST" action="/signup/">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="signupUserType">Account Type:</label>
-                        <select id="signupUserType" name="role" required>
+                        <label for="id_role">Account Type:</label>
+                        <select id="signupUserType" name="signupUserType" required>
                             <option value="">Select Account Type</option>
                             <option value="owner">Owner</option>
                             <option value="vendor">Vendor</option>
@@ -374,33 +374,27 @@
                     
                     <div class="form-group">
                         <label for="signupFullName">Full Name:</label>
-                        <input type="text" id="signupFullName" placeholder="Enter your full name" required>
+                        <input type="text" id="signupFullName" name="signupFullName" placeholder="Enter your full name" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="signupEmail">Email:</label>
-                        <input type="email" id="signupEmail" placeholder="Enter your email" required>
+                        <input type="email" id="signupEmail" name="signupEmail" placeholder="Enter your email" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="signupUsername">Username:</label>
-                        <input type="text" id="signupUsername" placeholder="Choose a username" required>
+                        <input type="text" id="signupUsername" name="signupUsername" placeholder="Choose a username" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="signupPassword">Password:</label>
-                        <input type="password" id="signupPassword" placeholder="Create a password" required>
-                        <div class="password-strength">
-                            <div class="strength-bar">
-                                <div class="strength-fill" id="strengthFill"></div>
-                            </div>
-                            <span id="strengthText">Password strength will appear here</span>
-                        </div>
+                        <input type="password" id="signupPassword" name="signupPassword" placeholder="Create a password" required>
                     </div>
                     
                     <div class="form-group">
                         <label for="signupConfirmPassword">Confirm Password:</label>
-                        <input type="password" id="signupConfirmPassword" placeholder="Confirm your password" required>
+                        <input type="password" id="signupConfirmPassword" name="signupConfirmPassword" placeholder="Confirm your password" required>
                     </div>
                     
                     <button type="submit" class="signup-btn">Create Account</button>
@@ -414,221 +408,5 @@
         </div>
     </div>
 
-    <script>
-        // In-memory storage for demo purposes
-        let registeredUsers = [];
-
-        // Form elements
-        const signupForm = document.getElementById('signupForm');
-        const passwordInput = document.getElementById('signupPassword');
-        const strengthFill = document.getElementById('strengthFill');
-        const strengthText = document.getElementById('strengthText');
-
-        // Password strength checker
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-            const strength = checkPasswordStrength(password);
-            updatePasswordStrengthDisplay(strength);
-        });
-
-        function checkPasswordStrength(password) {
-            let score = 0;
-            const feedback = [];
-
-            if (password.length >= 8) score += 1;
-            else feedback.push('At least 8 characters');
-
-            if (/[a-z]/.test(password)) score += 1;
-            else feedback.push('Lowercase letter');
-
-            if (/[A-Z]/.test(password)) score += 1;
-            else feedback.push('Uppercase letter');
-
-            if (/[0-9]/.test(password)) score += 1;
-            else feedback.push('Number');
-
-            if (/[^A-Za-z0-9]/.test(password)) score += 1;
-            else feedback.push('Special character');
-
-            return {
-                score: score,
-                feedback: feedback,
-                level: score < 3 ? 'weak' : score < 4 ? 'medium' : 'strong'
-            };
-        }
-
-        function updatePasswordStrengthDisplay(strength) {
-            const percentage = (strength.score / 5) * 100;
-            strengthFill.style.width = percentage + '%';
-            strengthFill.className = strength-fill strength-${strength.level};
-
-            if (strength.score === 0) {
-                strengthText.textContent = 'Password strength will appear here';
-            } else if (strength.score < 3) {
-                strengthText.textContent = Weak - Missing: ${strength.feedback.join(', ')};
-            } else if (strength.score < 4) {
-                strengthText.textContent = Medium - Missing: ${strength.feedback.join(', ')};
-            } else {
-                strengthText.textContent = 'Strong password!';
-            }
-        }
-
-      
-
-        function handleSignup() {
-            const userType = document.getElementById('signupUserType').value;
-            const fullName = document.getElementById('signupFullName').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
-            const username = document.getElementById('signupUsername').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            const confirmPassword = document.getElementById('signupConfirmPassword').value;
-
-            // Clear previous messages
-            hideMessages();
-
-            // Validate inputs
-            if (!userType || !fullName || !email || !username || !password || !confirmPassword) {
-                showError('Please fill in all fields');
-                return;
-            }
-
-            // Validate email format
-            if (!isValidEmail(email)) {
-                showError('Please enter a valid email address');
-                return;
-            }
-
-            // Validate password match
-            if (password !== confirmPassword) {
-                showError('Passwords do not match');
-                return;
-            }
-
-            // Validate password strength
-            const strength = checkPasswordStrength(password);
-            if (strength.score < 3) {
-                showError('Password is too weak. Please choose a stronger password.');
-                return;
-            }
-
-            // Check if username already exists
-            if (registeredUsers.some(user => user.username === username)) {
-                showError('Username already exists. Please choose a different username.');
-                return;
-            }
-
-            // Check if email already exists
-            if (registeredUsers.some(user => user.email === email)) {
-                showError('Email already registered. Please use a different email.');
-                return;
-            }
-
-            // Simulate registration process
-            const submitButton = document.querySelector('.signup-btn');
-            submitButton.disabled = true;
-            submitButton.textContent = 'Creating Account...';
-
-            setTimeout(() => {
-                // Create new user object
-                const newUser = {
-                    id: Date.now(),
-                    userType: userType,
-                    fullName: fullName,
-                    email: email,
-                    username: username,
-                    password: password, // In real app, this would be hashed
-                    createdAt: new Date().toISOString()
-                };
-
-                // Add to registered users
-                registeredUsers.push(newUser);
-
-                // Show success message
-                showSuccess(Account created successfully! Welcome to NEXUS ICE, ${fullName}!);
-
-                // Reset form
-                signupForm.reset();
-                strengthFill.style.width = '0%';
-                strengthText.textContent = 'Password strength will appear here';
-
-                // Re-enable button
-                submitButton.disabled = false;
-                submitButton.textContent = 'Create Account';
-
-                console.log('New user registered:', newUser);
-            }, 1500);
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('signupErrorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                hideMessages();
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('signupSuccessMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                hideMessages();
-            }, 5000);
-        }
-
-        function hideMessages() {
-            document.getElementById('signupErrorMessage').style.display = 'none';
-            document.getElementById('signupSuccessMessage').style.display = 'none';
-        }
-
-        // Add some interactive particles on click
-        document.addEventListener('click', function(e) {
-            createClickParticle(e.clientX, e.clientY);
-        });
-
-        function createClickParticle(x, y) {
-            const particle = document.createElement('div');
-            particle.style.position = 'fixed';
-            particle.style.left = x + 'px';
-            particle.style.top = y + 'px';
-            particle.style.width = '6px';
-            particle.style.height = '6px';
-            particle.style.background = '#c2f2d0';
-            particle.style.borderRadius = '50%';
-            particle.style.pointerEvents = 'none';
-            particle.style.zIndex = '1000';
-            particle.style.animation = 'clickParticle 0.6s ease-out forwards';
-            
-            document.body.appendChild(particle);
-            
-            setTimeout(() => {
-                particle.remove();
-            }, 600);
-        }
-
-        // Add click particle animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes clickParticle {
-                0% { 
-                    transform: scale(0) rotate(0deg);
-                    opacity: 1;
-                }
-                100% { 
-                    transform: scale(3) rotate(180deg);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
 </body>
 </html>

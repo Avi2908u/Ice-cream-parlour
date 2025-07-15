@@ -1,9 +1,7 @@
 from django.urls import path
 from . import views
-from .views import RegisterView, UserListView
+from .views import RegisterView, UserListView, SummaryView 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import SummaryView
-from . import views
 
 app_name = 'cart'  # Needed if using namespaced URLs like 'cart:view_cart'
 

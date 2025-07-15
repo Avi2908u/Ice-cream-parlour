@@ -4,27 +4,20 @@ from django.utils import timezone
 from .models import Sale, Product, CartItem, Vendor, User
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, get_user_model
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer, RegisterSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.http import JsonResponse
+from .serializers import UserSerializer
+from django.contrib import messages
+
 
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     serializer_class = UserSerializer
-
-     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Account created successfully'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=sta
 
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -62,6 +55,8 @@ class SummaryView(APIView):
         })
 
 
+User = get_user_model()
+
 def signup_page(request):
     if request.method == 'POST':
         role = request.POST.get('signupUserType')
@@ -84,23 +79,21 @@ def signup_page(request):
         if User.objects.filter(email=email).exists():
             return render(request, 'signup.html', {'error': 'Email already registered.'})
 
-        user = User.objects.create(
+        user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
             role=role,
             first_name=name
         )
-
-        refresh = RefreshToken.for_user(user)
-        return JsonResponse({
-             "message": "User registered successfully!",
-             "access": str(refresh.access_token),
-             "refresh": str(refresh),
-})
-
-
-    return render(request, 'signup.html')
+       
+        if role == 'vendor':
+           Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
+        user.set_password(password)
+        user.save()
+        messages.success(request, "User registered successfully! Please login.")
+        return redirect('/login/')  
+    
 
 def login_page(request):
     if request.method == 'POST':
