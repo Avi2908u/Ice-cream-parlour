@@ -252,6 +252,29 @@
             font-weight: 600;
             border: 1px solid rgba(255, 0, 0, 0.3);
         }
+        .signup-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 12px 25px;
+    background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+    color: var(--primary-brown);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    letter-spacing: 1px;
+    font-family: 'Exo 2', sans-serif;
+    text-transform: uppercase;
+    z-index: 1000; /* ensures it stays on top */
+}
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
+        }
 
         .floating-particles {
             position: fixed;
@@ -293,8 +316,10 @@
         }
     </style>
 </head>
+
 <body>
     <div class="floating-particles">
+        <!-- All particles stay the same -->
         <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
         <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
         <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
@@ -308,92 +333,45 @@
 
     <div class="container">
         <div class="login-page">
-            <div class="login-form">
+            <button class="signup-btn" onclick=" window.location.href = '/signup/';">Sign-up</button>
+            <form method="POST" action="/login/" class="login-form">
+                {% csrf_token %}
                 <h1>NEXUS ICE</h1>
                 <p class="subtitle">Future of Ice Cream Management</p>
                 <div class="form-group">
                     <label for="userType">Access Level:</label>
-                    <select id="userType">
+                    <select name="user_type" required>
                         <option value="">Select User Type</option>
                         <option value="owner">Owner</option>
                         <option value="vendor">Vendor</option>
                         <option value="customer">Customer</option>
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label for="username">Username:</label>
-                    <input type="text" id="username" placeholder="Enter username">
+                    <input name="username" type="text" required placeholder="Enter username">
                 </div>
+
                 <div class="form-group">
                     <label for="password">Password:</label>
-                    <input type="password" id="password" placeholder="Enter password">
+                    <input name="password" type="password" required placeholder="Enter password">
                 </div>
-                <button type="button" class="login-btn" onclick="handleLogin()">Initialize Access</button>
-                
-                <div id="errorMessage" class="error-message"></div>
-                
+
+                <button type="submit" class="login-btn">Initialize Access</button>
+
+                {% if error %}
+                    <div class="error-message" style="display:block">{{ error }}</div>
+                {% endif %}
+
                 <div class="demo-credentials">
                     <p><strong>Demo Access Codes:</strong></p>
                     <p><strong>Owner:</strong> admin / admin123</p>
                     <p><strong>Vendor:</strong> vendor1 / vendor123</p>
                     <p><strong>Customer:</strong> customer1 / customer123</p>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
-
-    <script>
-        function handleLogin() {
-            const userType = document.getElementById('userType').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-
-            // Reset error message
-            errorMessage.style.display = 'none';
-
-            // Simple validation
-            if (!userType || !username || !password) {
-                errorMessage.textContent = 'Please fill in all fields';
-                errorMessage.style.display = 'block';
-                return;
-            }
-
-            // Demo credentials check
-            const credentials = {
-                owner: { username: 'admin', password: 'admin123' },
-                vendor: { username: 'vendor1', password: 'vendor123' },
-                customer: { username: 'customer1', password: 'customer123' }
-            };
-
-            if (credentials[userType] && 
-                credentials[userType].username === username && 
-                credentials[userType].password === password) {
-                
-                // Redirect based on user type
-                switch(userType) {
-                    case 'owner':
-                        window.location.href = 'owner-dashboard.html';
-                        break;
-                    case 'vendor':
-                        window.location.href = 'vendor-dashboard.html';
-                        break;
-                    case 'customer':
-                        window.location.href = 'customer-dashboard.html';
-                        break;
-                }
-            } else {
-                errorMessage.textContent = 'Invalid credentials';
-                errorMessage.style.display = 'block';
-            }
-        }
-
-        // Allow Enter key to submit
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-    </script>
 </body>
 </html>

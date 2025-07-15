@@ -334,23 +334,23 @@
         </div>
         
         <div class="welcome-message">
-            <h2>Welcome, Vendor</h2>
+            <h2>Welcome, {{ vendor.shop_name }}</h2>
             <p>Advanced inventory management and real-time sales analytics</p>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>45</h3>
-                <p>Items in Stock</p>
-            </div>
-            <div class="stat-card">
-                <h3>85</h3>
-                <p>Items Sold Today</p>
-            </div>
-            <div class="stat-card">
-                <h3>$1,275</h3>
-                <p>Today's Revenue</p>
-            </div>
+    <h3>{{ total_stock }}</h3>
+    <p>Items in Stock</p>
+</div>
+<div class="stat-card">
+    <h3>{{ total_items_sold_today }}</h3>
+    <p>Items Sold Today</p>
+</div>
+<div class="stat-card">
+    <h3>${{ total_revenue_today }}</h3>
+    <p>Today's Revenue</p>
+</div>
         </div>
 
         <div class="table-container">
@@ -367,43 +367,23 @@
                         <th>Revenue</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>Vanilla Ice Cream</td>
-                        <td>15</td>
-                        <td>25</td>
-                        <td>$3.50</td>
-                        <td>$87.50</td>
-                    </tr>
-                    <tr>
-                        <td>Chocolate Ice Cream</td>
-                        <td>12</td>
-                        <td>30</td>
-                        <td>$4.00</td>
-                        <td>$120.00</td>
-                    </tr>
-                    <tr>
-                        <td>Strawberry Ice Cream</td>
-                        <td>8</td>
-                        <td>20</td>
-                        <td>$3.75</td>
-                        <td>$75.00</td>
-                    </tr>
-                    <tr>
-                        <td>Mint Chocolate Chip</td>
-                        <td>10</td>
-                        <td>10</td>
-                        <td>$4.25</td>
-                        <td>$42.50</td>
-                    </tr>
-                </tbody>
+               <tbody>
+    {% for item in report %}
+    <tr>
+        <td>{{ item.name }}</td>
+        <td>{{ item.stock }}</td>
+        <td>{{ item.sold_today }}</td>
+        <td>${{ item.price }}</td>
+        <td>${{ item.revenue }}</td>
+    </tr>
+    {% endfor %}
+</tbody>
             </table>
         </div>
     </div>
 
     <script>
         function handleLogout() {
-            // In a real application, this would clear session data
             window.location.href = 'login.html';
         }
     </script>
