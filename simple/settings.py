@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'iSCREAM',
 ]
+LOGIN_URL = '/login/'  # Or whatever your login URL is
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
