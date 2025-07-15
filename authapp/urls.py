@@ -1,17 +1,20 @@
 from django.urls import path
-from .views import RegisterView, UserListView
+from .views import (
+    RegisterView, UserListView, SummaryView,
+    login_page, signup_page
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from .views import SummaryView
-from . import views
-from authapp import views as auth_views
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('users/', UserListView.as_view(), name='user-list'), 
-    path('summary/', SummaryView.as_view(), name='summary'),
-    path('login/', views.login_page, name='login'),
+    # JWT API endpoints
+    path('api/register/', RegisterView.as_view(), name='register'),
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/users/', UserListView.as_view(), name='user-list'),
+    path('api/summary/', SummaryView.as_view(), name='summary'),
 
-    path('', auth_views.login_page, name='home'),
+    # Web UI views (login/signup pages)
+    path('', signup_page, name='signup'),          # Default route = signup page
+    path('signup/', signup_page, name='signup'),
+    path('login/', login_page, name='login'),
 ]

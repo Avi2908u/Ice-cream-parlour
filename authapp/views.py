@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from .models import User, Sale
 from .serializers import UserSerializer
 from django.db.models import Sum
+from django.contrib import messages
+
 
 
 class RegisterView(generics.CreateAPIView):
@@ -68,3 +70,31 @@ def login_page(request):
             return render(request, 'login.html', {'error': 'Invalid credentials'})
 
     return render(request, 'login.html')
+
+
+def signup_page(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        user_type = request.POST.get('user_type')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        if not all([username, email, password, confirm_password, user_type]):
+            return render(request, 'signup.html', {'error': 'All fields are required.'})
+
+        if password != confirm_password:
+            return render(request, 'signup.html', {'error': 'Passwords do not match.'})
+
+        if User.objects.filter(username=username).exists():
+            return render(request, 'signup.html', {'error': 'Username already exists.'})
+
+        if User.objects.filter(email=email).exists():
+            return render(request, 'signup.html', {'error': 'Email already registered.'})
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.save()
+
+        return redirect('login') 
+    
+    return render(request, 'signup.html')
