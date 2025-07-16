@@ -14,7 +14,10 @@ from rest_framework.decorators import api_view, action
 from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSerializer, FlavorProposalSerializer
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
-
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.contrib.admin.views.decorators import staff_member_required
 
 
 class RegisterView(generics.CreateAPIView):
@@ -94,6 +97,8 @@ def signup_page(request):
         return redirect('/login/')  
     return render(request, 'signup.html')
 
+@csrf_protect
+@csrf_exempt
 def login_page(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -166,7 +171,7 @@ def owner_dashboard(request):
         'total_stock_items': total_stock_items,
     }
 
-    return render(request, 'owner.html', context) 
+    return render(request, 'owner.html', context,{ 'pending_proposals': proposals }) 
 
 @login_required
 def vendor_dashboard(request):
@@ -315,6 +320,7 @@ def submit_flavour_proposal(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         description = request.POST.get('description')
+        price = request.POST.get('price')
 
         if not name or not description:
             messages.error(request, "Please fill out both fields.")
@@ -346,16 +352,20 @@ class FlavorProposalViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def approve(self, request, pk=None):
-        proposal = self.get_object()
-        proposal.status = 'accepted'
-        proposal.save()
-        return Response({'status': 'Proposal accepted'})
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def reject(self, request, pk=None):
-        proposal = self.get_object()
-        proposal.status = 'rejected'
-        proposal.save()
-        return Response({'status': 'Proposal rejected'})
+@require_POST
+@staff_member_required
+def approve_proposal(request, proposal_id):
+    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
+    proposal.status = 'accepted'
+    proposal.save()
+    return HttpResponseRedirect(reverse('owner'))
+
+@require_POST
+@staff_member_required
+def reject_proposal(request, proposal_id):
+    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
+    proposal.status = 'rejected'
+    proposal.save()
+    return HttpResponseRedirect(reverse('owner'))
+    

@@ -536,7 +536,7 @@
         <div class="dashboard-header">
             <h1 class="dashboard-title">VENDOR PORTAL</h1>
             <button class="propose-btn" onclick="openProposalModal()">Propose New Flavor</button>
-            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            <button type="button" class="logout-btn" onclick="window.location.href='/login/'">Logout</button>
         </div>
         
         <div class="welcome-message">
@@ -593,16 +593,16 @@
                 <h2 class="modal-title">New Flavor Proposal</h2>
                 <button class="close-btn" onclick="closeProposalModal()">&times;</button>
             </div>
-            <form id="proposalForm">
+            <form id="proposalForm" method="post">
     {% csrf_token %}
                 <div class="form-group">
                     <label for="flavorName">Flavor Name *</label>
-                    <input type="text" id="flavorName" name="flavorName" required placeholder="e.g., Midnight Cookies & Cream">
+                    <input type="text" id="flavorName" name="flavor_name" required placeholder="e.g., Midnight Cookies & Cream">
                 </div>
                 
                 <div class="form-group">
                     <label for="basePrice">Proposed Price (per serving) *</label>
-                    <input type="number" id="basePrice" name="basePrice" step="0.01" min="0" required placeholder="5.99">
+                    <input type="number" id="basePrice" name="base_price" step="0.01" min="0" required placeholder="5.99">
                 </div>
                 
                 <div class="form-group">
@@ -614,7 +614,7 @@
                     <button type="button" class="btn btn-secondary" onclick="closeProposalModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Submit Proposal</button>
                 </div>
-            </form>
+            </form>
  <script>
 document.addEventListener("DOMContentLoaded", function () {
     function openProposalModal() {
