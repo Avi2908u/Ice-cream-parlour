@@ -1,17 +1,19 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import Sale, IceCream, CartItem, Vendor, User
+from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
+from .forms import IceCreamForm
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
 from django.contrib.auth import authenticate, login, get_user_model
-from rest_framework import generics
+from rest_framework import generics ,viewsets, permissions
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSerializer
+from rest_framework.decorators import api_view, action
+from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSerializer, FlavorProposalSerializer
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 
 
 
@@ -119,47 +121,58 @@ def login_page(request):
     return render(request, 'login.html')
 @login_required
 def owner_dashboard(request):
-    vendors = Vendor.objects.all()
-
-    # Vendor report list
-    vendor_reports = []
-
-    total_units_sold = 0
+    today = date.today()
+    vendors = Vendor.objects.prefetch_related('icecreams').all()
+    proposals = FlavorProposal.objects.filter(status='pending')
+    total_items_sold = 0
     total_revenue = 0
+    total_stock_items = 0
+
+    vendor_data = []
 
     for vendor in vendors:
-        vendor_sales = Sale.objects.filter(product__vendor=vendor)
-        units_sold = vendor_sales.aggregate(total=Sum('quantity_sold'))['total'] or 0
+        icecreams = vendor.icecreams.all()
+        stock_items = icecreams.aggregate(total=Sum('stock'))['total'] or 0
 
-        revenue = vendor_sales.aggregate(
-            total=Sum(ExpressionWrapper(
-                F('quantity_sold') * F('product__price'),
-                output_field=FloatField()
-            ))
-        )['total'] or 0
+        sales_today = Sale.objects.filter(
+            product__in=icecreams,
+            date_sold=today
+        )
 
-        vendor_reports.append({
+        items_sold_today = sales_today.aggregate(sold=Sum('quantity_sold'))['sold'] or 0
+
+        revenue_today = sales_today.aggregate(
+            revenue=Sum(ExpressionWrapper(F('quantity_sold') * F('product__price'), output_field=FloatField()))
+        )['revenue'] or 0
+
+        vendor_data.append({
             'shop_name': vendor.shop_name,
-            'units_sold': units_sold,
-            'revenue': revenue
+            'vendor_id': vendor.id,
+            'joined_date': vendor.user.date_joined.strftime('%b %Y'),
+            'revenue_today': revenue_today,
+            'stock_items': stock_items,
+            'sold_today': items_sold_today,
         })
 
-        total_units_sold += units_sold
-        total_revenue += revenue
+        total_items_sold += items_sold_today
+        total_revenue += revenue_today
+        total_stock_items += stock_items
 
     context = {
+        'vendor_data': vendor_data,
+        'total_vendors': vendors.count(),
         'total_revenue': total_revenue,
-        'total_units_sold': total_units_sold,
-        'active_vendors': vendors.count(),
-        'vendor_reports': vendor_reports
+        'total_items_sold': total_items_sold,
+        'total_stock_items': total_stock_items,
     }
 
-    return render(request, 'owner.html', context)   
+    return render(request, 'owner.html', context) 
+
 @login_required
-@api_view(['GET'])
 def vendor_dashboard(request):
     vendor = Vendor.objects.get(user=request.user) 
-    icecreams = Icecream.objects.filter(vendor=vendor)
+    icecreams = IceCream.objects.filter(vendor=vendor)
+    vendor_proposals = FlavorProposal.objects.filter(vendor=request.user)
     serializer = IceCreamSerializer(icecreams, many=True)
     today = date.today()
     sales_today = Sale.objects.filter(product__vendor=vendor, date_sold=today)
@@ -279,3 +292,70 @@ def checkout(request):
 
     request.session['cart'] = {}
     return render(request, 'checkout_success.html')
+
+@login_required
+def add_flavour(request):
+    vendor = get_object_or_404(Vendor, user=request.user)
+
+    if request.method == 'POST':
+        form = IceCreamForm(request.POST)
+        if form.is_valid():
+            ice_cream = form.save(commit=False)
+            ice_cream.vendor = vendor  
+            ice_cream.save()
+            return redirect('vendor_dashboard')
+    else:
+        form = IceCreamForm()
+
+    return render(request, 'add_flavour.html', {'form': form})
+
+@csrf_protect
+@csrf_exempt
+def submit_flavour_proposal(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+
+        if not name or not description:
+            messages.error(request, "Please fill out both fields.")
+            return redirect('vendor_dashboard')
+
+        FlavorProposal.objects.create(
+            name=name,
+            price=price,
+            description=description,
+            status='pending'
+        )
+
+        messages.success(request, "Proposal submitted successfully!")
+        return redirect('vendor_dashboard')
+    else:
+        return redirect('vendor_dashboard')
+    
+class FlavorProposalViewSet(viewsets.ModelViewSet):
+    queryset = FlavorProposal.objects.all()
+    serializer_class = FlavorProposalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'vendor'):
+            return FlavorProposal.objects.filter(vendor=user)
+        return FlavorProposal.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(vendor=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def approve(self, request, pk=None):
+        proposal = self.get_object()
+        proposal.status = 'accepted'
+        proposal.save()
+        return Response({'status': 'Proposal accepted'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def reject(self, request, pk=None):
+        proposal = self.get_object()
+        proposal.status = 'rejected'
+        proposal.save()
+        return Response({'status': 'Proposal rejected'})

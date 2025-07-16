@@ -28,6 +28,24 @@ class IceCream(models.Model):
     def __str__(self):
         return f"{self.name} ({self.flavour})"
 
+class FlavorProposal(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    description = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.flavor_name} - {self.status}"
+
+
 class CartItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     product = models.ForeignKey('IceCream', on_delete=models.CASCADE)  # Fix here
@@ -54,6 +72,7 @@ class Sale(models.Model):
 
     def revenue(self):
         return self.quantity_sold * self.product.price
+    
 
 
 

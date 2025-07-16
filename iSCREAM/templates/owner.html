@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ice Cream Management - Owner Dashboard</title>
+    <title>Owner Dashboard - Ice Cream Management System</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
         
@@ -16,6 +16,9 @@
             --dark-bg: #0a0a0a;
             --glass-white: rgba(255, 255, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.2);
+            --success-green: #4ade80;
+            --danger-red: #ef4444;
+            --warning-yellow: #f59e0b;
         }
 
         * {
@@ -28,9 +31,6 @@
             font-family: 'Exo 2', sans-serif;
             background: linear-gradient(135deg, var(--dark-bg) 0%, var(--primary-brown) 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
             overflow-x: hidden;
         }
@@ -60,10 +60,11 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             overflow: hidden;
             width: 100%;
-            max-width: 1200px;
-            min-height: 700px;
+            max-width: 1400px;
+            margin: 0 auto;
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
+            padding: 50px;
         }
 
         .container::before {
@@ -90,13 +91,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .page {
-            padding: 50px;
-            animation: fadeIn 0.8s ease-in;
-            position: relative;
-            z-index: 1;
-        }
-
         .dashboard-header {
             display: flex;
             justify-content: space-between;
@@ -104,6 +98,8 @@
             margin-bottom: 40px;
             padding-bottom: 25px;
             border-bottom: 2px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
         }
 
         .dashboard-title {
@@ -115,10 +111,14 @@
             text-shadow: 0 0 20px var(--peach-orange);
         }
 
-        .logout-btn {
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
             padding: 12px 25px;
-            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
-            color: var(--primary-brown);
             border: none;
             border-radius: 12px;
             cursor: pointer;
@@ -130,14 +130,52 @@
             text-transform: uppercase;
         }
 
-        .logout-btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--cream-yellow) 0%, var(--peach-orange) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
         }
 
+        .welcome-message {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: 25px;
+            margin-bottom: 40px;
+            text-align: center;
+            color: white;
+            font-size: 1.3em;
+            font-weight: 300;
+            letter-spacing: 1px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-message h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--cream-yellow);
+            text-shadow: 0 0 20px var(--peach-orange);
+        }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
         }
@@ -146,7 +184,7 @@
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(15px);
             color: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 25px;
             text-align: center;
             box-shadow: 
@@ -179,7 +217,7 @@
 
         .stat-card h3 {
             font-family: 'Orbitron', monospace;
-            font-size: 3em;
+            font-size: 2.5em;
             margin-bottom: 15px;
             position: relative;
             z-index: 1;
@@ -189,7 +227,7 @@
         }
 
         .stat-card p {
-            font-size: 1.3em;
+            font-size: 1.1em;
             position: relative;
             z-index: 1;
             font-weight: 400;
@@ -198,97 +236,242 @@
             text-transform: uppercase;
         }
 
-        .vendor-card {
+        .dashboard-section {
+            margin-bottom: 40px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8em;
+            color: var(--cream-yellow);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px var(--peach-orange);
+        }
+
+        .table-container {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             border-radius: 25px;
             box-shadow: 
                 0 20px 40px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            margin-bottom: 25px;
             overflow: hidden;
-            transition: all 0.3s ease;
             border: 1px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 30px;
         }
 
-        .vendor-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
-        }
-
-        .vendor-header {
-            background: linear-gradient(135deg, var(--mint-green) 0%, var(--cream-yellow) 100%);
-            padding: 25px;
+        .table-header {
+            background: linear-gradient(135deg, var(--cream-yellow) 0%, var(--peach-orange) 100%);
             color: var(--primary-brown);
-            font-weight: 600;
+            padding: 20px 25px;
             font-size: 1.2em;
+            font-weight: 600;
             letter-spacing: 1px;
             text-transform: uppercase;
             font-family: 'Orbitron', monospace;
         }
 
-        .vendor-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            padding: 25px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .vendor-stat {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 197, 217, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
+        th, td {
+            padding: 15px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
             color: white;
-            transition: all 0.3s ease;
-            border: 1px solid var(--glass-border);
         }
 
-        .vendor-stat:hover {
-            transform: scale(1.05);
-            background: rgba(255, 197, 217, 0.3);
-            box-shadow: 0 10px 30px rgba(255, 197, 217, 0.2);
-        }
-        .vendor-stat h4 {
-            font-family: 'Orbitron', monospace;
-            font-size: 1.8em;
-            margin-bottom: 8px;
-            font-weight: 700;
-            color: var(--cream-yellow);
-        }
-
-        .vendor-stat p {
-            font-weight: 400;
+        th {
+            background: rgba(255, 197, 217, 0.2);
+            font-weight: 600;
             letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--soft-pink);
+            font-size: 0.9em;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .period-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            background: transparent;
             color: var(--mint-green);
             text-transform: uppercase;
         }
 
-        .welcome-message {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            padding: 35px;
-            border-radius: 25px;
-            margin-bottom: 40px;
-            text-align: center;
-            color: white;
-            font-size: 1.3em;
-            font-weight: 300;
-            letter-spacing: 1px;
-            box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
+        .period-btn.active {
+            background: var(--mint-green);
+            color: var(--primary-brown);
+            font-weight: 600;
         }
 
-        .welcome-message h2 {
-            font-family: 'Orbitron', monospace;
-            font-size: 2.2em;
-            margin-bottom: 15px;
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-action {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .btn-accept {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .btn-reject {
+            background: var(--danger-red);
+            color: white;
+        }
+
+        .btn-pending {
+            background: var(--warning-yellow);
+            color: var(--primary-brown);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: var(--success-green);
+            color: white;
+        }
+
+        .status-pending {
+            background: var(--warning-yellow);
+            color: var(--primary-brown);
+        }
+
+        .status-rejected {
+            background: var(--danger-red);
+            color: white;
+        }
+
+        .vendor-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .vendor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .vendor-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--peach-orange) 0%, transparent 70%);
+            opacity: 0.05;
+            animation: rotate 25s linear infinite;
+        }
+
+        .vendor-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .vendor-details h4 {
+            color: var(--cream-yellow);
+            font-size: 1.3em;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .vendor-details p {
+            color: var(--mint-green);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .vendor-metrics {
+            display: flex;
+            gap: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
             font-weight: 700;
             color: var(--cream-yellow);
-            text-shadow: 0 0 20px var(--peach-orange);
+            font-family: 'Orbitron', monospace;
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: var(--mint-green);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .floating-particles {
@@ -315,18 +498,31 @@
             50% { transform: translateY(-20px) rotate(180deg); }
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+        .notification-badge {
+            position: relative;
+            display: inline-block;
+        }
+
+        .notification-badge::after {
+            content: attr(data-count);
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--danger-red);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
-                min-height: 500px;
-            }
-            
-            .page {
                 padding: 30px 25px;
             }
             
@@ -338,8 +534,19 @@
                 grid-template-columns: 1fr;
             }
             
-            .vendor-stats {
-                grid-template-columns: 1fr;
+            .header-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .vendor-info {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .vendor-metrics {
+                justify-content: center;
             }
         }
     </style>
@@ -358,69 +565,209 @@
     </div>
 
     <div class="container">
-        <div class="page">
-            <div class="dashboard-header">
-                <h1 class="dashboard-title">COMMAND CENTER</h1>
-                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">OWNER PORTAL</h1>
+            <div class="header-actions">
+                <button class="btn btn-secondary notification-badge" data-count="3" onclick="showRegistrations()">
+                    New Registrations
+                </button>
+                <button class="btn btn-primary" onclick="addVendor()">Add Vendor</button>
+                <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
+            </div>
+        </div>
+        
+        <div class="welcome-message">
+            <h2>Welcome, Business Owner</h2>
+            <p>Complete vendor management system with real-time analytics and performance tracking</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>{{ total_vendors }}</h3>
+                <p>Active Vendors</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ total_revenue_today}}</h3>
+                <p>Total Revenue Today</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ item.sold_today }}</h3>
+                <p>Items Sold Today</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ total_stock }}</h3>
+                <p>Total Stock Items</p>
+            </div>
+            <div class="stat-card">
+                <h3>3</h3>
+                <p>Pending Applications</p>
+            </div>
+        </div>
+
+        <!-- Vendor Performance Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Vendor Performance</h2>
+                <div class="period-selector">
+                    <button class="period-btn active" onclick="switchPeriod('month', this)">Monthly</button>
+                    <button class="period-btn" onclick="switchPeriod('year', this)">Yearly</button>
+                </div>
             </div>
             
-            <div class="welcome-message">
-                <h2>Welcome, Business Owner</h2>
+           {% for vendor in vendor_data %}
+<div class="vendor-card">
+    <div class="vendor-info">
+        <div class="vendor-details">
+            <h4>{{ vendor.shop_name }}</h4>
+            <p>Vendor ID: V{{ vendor.vendor_id }}</p>
+            <p>Joined: {{ vendor.joined_date }}</p>
+        </div>
+        <div class="vendor-metrics">
+            <div class="metric">
+                <div class="metric-value">${{ vendor.revenue_today }}</div>
+                <div class="metric-label">Today</div>
             </div>
-
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>$2,450</h3>
-                    <p>Total Revenue</p>
-                </div>
-                <div class="stat-card">
-                    <h3>145</h3>
-                    <p>Units Sold</p>
-                </div>
-                <div class="stat-card">
-                    <h3>3</h3>
-                    <p>Active Vendors</p>
-                </div>
+            <div class="metric">
+                <div class="metric-value">{{ vendor.stock_items }}</div>
+                <div class="metric-label">Stock Items</div>
             </div>
-
-            <div class="vendor-card">
-                <div class="vendor-header">
-                    <h3>Vendor: John's Ice Cream Stand</h3>
-                </div>
-                <div class="vendor-stats">
-                    <div class="vendor-stat">
-                        <h4>85</h4>
-                        <p>Units Sold</p>
-                    </div>
-                    <div class="vendor-stat">
-                        <h4>$1,275</h4>
-                        <p>Revenue Generated</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="vendor-card">
-                <div class="vendor-header">
-                    <h3>Vendor: Sarah's Sweet Treats</h3>
-                </div>
-                <div class="vendor-stats">
-                    <div class="vendor-stat">
-                        <h4>60</h4>
-                        <p>Units Sold</p>
-                    </div>
-                    <div class="vendor-stat">
-                        <h4>$1,175</h4>
-                        <p>Revenue Generated</p>
-                    </div>
-                </div>
+            <div class="metric">
+                <div class="metric-value">{{ vendor.sold_today }}</div>
+                <div class="metric-label">Sold Today</div>
             </div>
         </div>
     </div>
+</div>
+{% endfor %}
+ 
+        <!-- Vendor Registration Management -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">Vendor Registration Requests</h2>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-header">
+                    Pending Vendor Applications
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Applicant Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Applied Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Emma Wilson</td>
+                            <td>emma.wilson@email.com</td>
+                            <td>+1 (555) 123-4567</td>
+                            <td>Jul 14, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>David Chen</td>
+                            <td>david.chen@email.com</td>
+                            <td>+1 (555) 234-5678</td>
+                            <td>Jul 15, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Lisa Rodriguez</td>
+                            <td>lisa.rodriguez@email.com</td>
+                            <td>+1 (555) 345-6789</td>
+                            <td>Jul 16, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-    <script>
-        function handleLogout() {
-            window.location.href = '/login/';
-        }
-    </script>
-</body>
-</html>
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">New Flavor Proposals</h2>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-header">
+                    Pending Flavor Applications
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Flavor</th>
+                            <th>Price</th>
+                            <th>Ingredients</th>
+                            <th>Applied Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Emma Wilson</td>
+                            <td>emma.wilson@email.com</td>
+                            <td>+1 (555) 234-5678</td>
+                            <td>Jul 14, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>David Chen</td>
+                            <td>david.chen@email.com</td>
+                            <td>+1 (555) 234-5678</td>
+                            <td>Jul 15, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Lisa Rodriguez</td>
+                            <td>lisa.rodriguez@email.com</td>
+                            <td>+1 (555) 345-6789</td>
+                            <td>Jul 16, 2024</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
+                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </div>
+            </body>
+            </html>
+    

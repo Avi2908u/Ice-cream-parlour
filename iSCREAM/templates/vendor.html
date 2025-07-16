@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendor Dashboard - Ice Cream Management System</title>
-    <style>
+   <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
         
         :root {
@@ -111,10 +111,14 @@
             text-shadow: 0 0 20px var(--peach-orange);
         }
 
-        .logout-btn {
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .logout-btn, .propose-btn {
             padding: 12px 25px;
-            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
-            color: var(--primary-brown);
             border: none;
             border-radius: 12px;
             cursor: pointer;
@@ -126,7 +130,17 @@
             text-transform: uppercase;
         }
 
-        .logout-btn:hover {
+        .logout-btn {
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+        }
+
+        .propose-btn {
+            background: linear-gradient(135deg, var(--peach-orange) 0%, var(--cream-yellow) 100%);
+            color: var(--primary-brown);
+        }
+
+        .logout-btn:hover, .propose-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
         }
@@ -273,6 +287,168 @@
             transition: all 0.3s ease;
         }
 
+        /* Modal Styles */
+        .side-modal {
+            display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 10, 10, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+        }
+
+        .side-modal-content {
+              position: absolute;
+    top: 0;
+    right: -100%;
+    width: 400px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    padding: 40px;
+    border-left: 1px solid var(--glass-border);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    transition: right 0.4s ease;
+    border-radius: 0;
+    overflow-y: auto;
+        }
+        .side-modal.show{
+            display: block;
+        }
+.side-modal.show .side-modal-content {
+    right: 0;
+}
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2em;
+            color: var(--cream-yellow);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px var(--peach-orange);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: var(--soft-pink);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--cream-yellow);
+            transform: scale(1.2);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--mint-green);
+            font-size: 1.1em;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            font-family: 'Exo 2', sans-serif;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--soft-pink);
+            box-shadow: 0 0 20px rgba(255, 197, 217, 0.3);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-family: 'Exo 2', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--peach-orange) 0%, var(--cream-yellow) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
+        }
+
+        /* Proposal Preview */
+        .proposal-preview {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid var(--glass-border);
+            color: white;
+            font-family: 'Exo 2', sans-serif;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
         .floating-particles {
             position: fixed;
             top: 0;
@@ -297,6 +473,25 @@
             50% { transform: translateY(-20px) rotate(180deg); }
         }
 
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--mint-green) 0%, var(--peach-orange) 100%);
+            color: var(--primary-brown);
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -310,6 +505,16 @@
             
             .stats-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                padding: 30px 20px;
             }
         }
     </style>
@@ -330,6 +535,7 @@
     <div class="container">
         <div class="dashboard-header">
             <h1 class="dashboard-title">VENDOR PORTAL</h1>
+            <button class="propose-btn" onclick="openProposalModal()">Propose New Flavor</button>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         
@@ -381,11 +587,57 @@
             </table>
         </div>
     </div>
+    <div id="proposalModal" class="side-modal">
+        <div class="side-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">New Flavor Proposal</h2>
+                <button class="close-btn" onclick="closeProposalModal()">&times;</button>
+            </div>
+            <form id="proposalForm">
+    {% csrf_token %}
+                <div class="form-group">
+                    <label for="flavorName">Flavor Name *</label>
+                    <input type="text" id="flavorName" name="flavorName" required placeholder="e.g., Midnight Cookies & Cream">
+                </div>
+                
+                <div class="form-group">
+                    <label for="basePrice">Proposed Price (per serving) *</label>
+                    <input type="number" id="basePrice" name="basePrice" step="0.01" min="0" required placeholder="5.99">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Flavor Description *</label>
+                    <textarea id="description" name="description" rows="4" required placeholder="Describe the taste, texture, and unique qualities of this flavor..."></textarea>
+                </div>
 
-    <script>
-        function handleLogout() {
-            window.location.href = '/login/';
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeProposalModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Proposal</button>
+                </div>
+            </form>
+ <script>
+document.addEventListener("DOMContentLoaded", function () {
+    function openProposalModal() {
+        document.getElementById("proposalModal").classList.add("show");
+    }
+
+    function closeProposalModal() {
+        document.getElementById("proposalModal").classList.remove("show");
+    }
+
+    window.openProposalModal = openProposalModal;
+    window.closeProposalModal = closeProposalModal;
+
+    // Optional: click outside to close
+    window.onclick = function (event) {
+        const modal = document.getElementById("proposalModal");
+        if (event.target === modal) {
+            modal.classList.remove("show");
         }
-    </script>
+    };
+});
+</script>
+           
+
 </body>
 </html>

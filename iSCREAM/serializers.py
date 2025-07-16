@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Sale, Vendor, IceCream
+from .models import User, Sale, Vendor, IceCream, FlavorProposal
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,3 +34,8 @@ class VendorIceCreamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
         fields = ['id', 'shop_name', 'icecreams']
+
+class FlavorProposalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FlavorProposal
+        fields = '__all__'
