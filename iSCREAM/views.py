@@ -314,29 +314,32 @@ def add_flavour(request):
 
     return render(request, 'add_flavour.html', {'form': form})
 
-@csrf_protect
-@csrf_exempt
 def submit_flavour_proposal(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
+        print("svbsdvbs")
+        vendor= request.user
+        name = request.POST.get('flavor_name')
         description = request.POST.get('description')
-        price = request.POST.get('price')
+        price = request.POST.get('base_price')
+        image = request.FILES.get('image')  
 
         if not name or not description:
             messages.error(request, "Please fill out both fields.")
-            return redirect('vendor_dashboard')
+            return redirect('/vendor/')
 
         FlavorProposal.objects.create(
+            vendor=vendor,
             name=name,
             price=price,
             description=description,
-            status='pending'
+            status='pending',
+            image=image
         )
 
         messages.success(request, "Proposal submitted successfully!")
-        return redirect('vendor_dashboard')
-    else:
-        return redirect('vendor_dashboard')
+        return redirect('/vendor/')
+    
+    return redirect('/vendor/')
     
 class FlavorProposalViewSet(viewsets.ModelViewSet):
     queryset = FlavorProposal.objects.all()
