@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import Sale, Product, CartItem, Vendor, User
+from .models import Sale, IceCream, CartItem, Vendor, User
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
 from django.contrib.auth import authenticate, login, get_user_model
@@ -9,7 +9,8 @@ from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import UserSerializer
+from rest_framework.decorators import api_view
+from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSerializer
 from django.contrib import messages
 
 
@@ -34,8 +35,6 @@ class UserListView(APIView):
 
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
-
-
 
 class SummaryView(APIView):
     permission_classes = [IsAuthenticated]
@@ -65,7 +64,6 @@ def signup_page(request):
         username = request.POST.get('signupUsername')
         password = request.POST.get('signupPassword')
         confirm_password = request.POST.get('signupConfirmPassword')
-        print("1111",role)
 
         if not all([role, name, email, username, password, confirm_password]):
             return render(request, 'signup.html', {'error': 'Please fill all fields.'})
@@ -91,9 +89,8 @@ def signup_page(request):
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
         user.set_password(password)
         user.save()
-        messages.success(request, "User registered successfully! Please login.")
         return redirect('/login/')  
-    
+    return render(request, 'signup.html')
 
 def login_page(request):
     if request.method == 'POST':
@@ -159,30 +156,26 @@ def owner_dashboard(request):
 
     return render(request, 'owner.html', context)   
 @login_required
+@api_view(['GET'])
 def vendor_dashboard(request):
-    vendor = Vendor.objects.get(user=request.user)
-
-    # Get all vendor products
-    products = Product.objects.filter(vendor=vendor)
-
-    # Today's sales
+    vendor = Vendor.objects.get(user=request.user) 
+    icecreams = Icecream.objects.filter(vendor=vendor)
+    serializer = IceCreamSerializer(icecreams, many=True)
     today = date.today()
     sales_today = Sale.objects.filter(product__vendor=vendor, date_sold=today)
-
-    # Stats
-    total_stock = products.aggregate(stock=Sum('stock'))['stock'] or 0
+    total_stock = icecreams.aggregate(stock=Sum('stock'))['stock'] or 0
     total_items_sold_today = sales_today.aggregate(sold=Sum('quantity_sold'))['sold'] or 0
     total_revenue_today = sales_today.aggregate(
         revenue=Sum(ExpressionWrapper(F('quantity_sold') * F('product__price'), output_field=FloatField()))
     )['revenue'] or 0
 
-    # Report
     report = []
-    for product in products:
+    for product in icecreams:
         sold_today = sales_today.filter(product=product).aggregate(sold=Sum('quantity_sold'))['sold'] or 0
         revenue = sold_today * float(product.price)
         report.append({
-            'name': product.name,
+            'id': product.id,
+            'flavour': product.flavour,
             'stock': product.stock,
             'sold_today': sold_today,
             'price': product.price,
@@ -200,44 +193,89 @@ def vendor_dashboard(request):
 
 @login_required
 def customer_dashboard(request):
-    products = Product.objects.all()
-    return render(request, 'customer_dashboard.html', {'products': products})
-    
+    vendors = Vendor.objects.prefetch_related('icecreams').all() 
+    return render(request, 'customer_dashboard.html',{'venders':vendors})
+
 @login_required
 def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-    if not created:
-        item.quantity += 1
-        item.save()
-    return redirect('view_cart')
+    product = get_object_or_404(IceCream, id=product_id)
+    cart = request.session.get('cart',{})
+    if str(product_id) in cart:
+        cart[str(product_id)] += 1
+    else:
+        cart[str(product_id)] = 1
+
+    request.session['cart'] = cart
+    return redirect('customer_dashboard')
 
 @login_required
 def view_cart(request):
-    items = CartItem.objects.filter(user=request.user)
-    total = sum(item.product.price * item.quantity for item in items)
+    cart = request.session.get('cart', {})
+    items = []
+    total = 0
+
+    for product_id, quantity in cart.items():
+        product = get_object_or_404(IceCream, id=product_id)
+        subtotal = product.price * quantity
+        total += subtotal
+        items.append({'product': product, 'quantity': quantity, 'subtotal': subtotal})
+
     return render(request, 'cart.html', {'items': items, 'total': total})
+
+
+@login_required
+def buy_ice_cream(request):
+    if request.method == 'POST':
+        ice_cream_id = request.POST.get('ice_cream_id')
+        quantity = int(request.POST.get('quantity', 1))
+
+        ice_cream = get_object_or_404(IceCream, id=ice_cream_id)
+
+        if ice_cream.stock < quantity:
+            messages.error(request, f"Not enough stock available for {ice_cream.name}. Only {ice_cream.stock} left.")
+            return redirect('/customer/')
+        # Reduce stock
+        ice_cream.stock -= quantity
+        ice_cream.save()
+
+        # Record the sale
+        Sale.objects.create(
+            product=ice_cream,
+            customer=request.user,
+            quantity_sold=quantity,
+            date_sold=timezone.now().date()
+        )
+        messages.success(request, f"Successfully purchased {quantity} of {ice_cream.name}!")
+        return redirect('/customer/')
+        
+    messages.error(request, "Invalid request method.")
+    return redirect('/customer/')
 
 @login_required
 def checkout(request):
-    items = CartItem.objects.filter(user=request.user)
-    total = sum(item.product.price * item.quantity for item in items)
+    cart = request.session.get('cart', {})
+    if not cart:
+        return redirect('view_cart')
 
-    if request.method == 'POST':
-        # Save each item as a Sale
-        for item in items:
-            Sale.objects.create(
-                product=item.product,
-                quantity_sold=item.quantity,
-                vendor=item.product.vendor.user,
-                units_sold=item.quantity,
-                price_per_unit=item.product.price
-            )
-            item.product.stock -= item.quantity
-            item.product.save()
+    for product_id, quantity in cart.items():
+        product = get_object_or_404(IceCream, id=product_id)
 
-        # Clear the cart
-        items.delete()
-        return render(request, 'checkout_success.html', {'total': total})
+        if product.stock < quantity:
+            return render(request, 'cart.html', {
+                'items': [],
+                'total': 0,
+                'error': f"Not enough stock for {product.name}."
+            })
 
-    return render(request, 'checkout.html', {'items': items, 'total': total})
+        product.stock -= quantity
+        product.save()
+
+        Sale.objects.create(
+            product=product,
+            quantity_sold=quantity,
+            customer=request.user,
+            date_sold=timezone.now().date()
+        )
+
+    request.session['cart'] = {}
+    return render(request, 'checkout_success.html')

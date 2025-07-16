@@ -3,7 +3,6 @@ from . import views
 from .views import RegisterView, UserListView, SummaryView 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-app_name = 'cart'  # Needed if using namespaced URLs like 'cart:view_cart'
 
 urlpatterns = [
     path('', views.login_page, name='index'),

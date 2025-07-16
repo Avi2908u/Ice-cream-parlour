@@ -336,7 +336,7 @@
             <button class="signup-btn" onclick=" window.location.href = '/signup/';">Sign-up</button>
             <form method="POST" action="/login/" class="login-form">
                 {% csrf_token %}
-                <h1>NEXUS ICE</h1>
+                <h1>NEXUS ICE CREAM</h1>
                 <p class="subtitle">Future of Ice Cream Management</p>
                 <div class="form-group">
                     <label for="userType">Access Level:</label>
@@ -364,12 +364,6 @@
                     <div class="error-message" style="display:block">{{ error }}</div>
                 {% endif %}
 
-                <div class="demo-credentials">
-                    <p><strong>Demo Access Codes:</strong></p>
-                    <p><strong>Owner:</strong> admin / admin123</p>
-                    <p><strong>Vendor:</strong> vendor1 / vendor123</p>
-                    <p><strong>Customer:</strong> customer1 / customer123</p>
-                </div>
             </form>
         </div>
     </div>

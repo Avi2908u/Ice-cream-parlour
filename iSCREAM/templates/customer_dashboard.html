@@ -435,10 +435,44 @@
                 width: 100vw;
                 padding: 18px;
             }
+              .messages {
+      list-style: none;
+      padding: 10px;
+  }
+  .messages li {
+      margin-bottom: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+  }
+  .messages li.success {
+      background-color: #c2f2d0;
+      color: #2e7d32;
+  }
+  .messages li.error {
+      background-color: #ffc5d9;
+      color: #b71c1c;
+  }
         }
     </style>
 </head>
 <body>
+    {% if messages %}
+      <ul class="messages">
+       {% for message in messages %}
+         <li class="{{ message.tags }}">{{ message }}</li>
+       {% endfor %}
+      </ul>
+    {% endif %}
+    {% for vendor in vendors %}
+  <h2>{{ vendor.shop_name }}</h2>
+  <ul>
+    {% for icecream in vendor.icecreams.all %}
+      <li>{{ icecream.flavour }} - ₹{{ icecream.price }} (Stock: {{ icecream.stock }})</li>
+    {% endfor %}
+  </ul>
+{% endfor %}
+
     <div class="floating-particles">
         <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
         <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
@@ -584,90 +618,6 @@
             }
         ];
 
-        // Render Product Cards
-        function renderProducts() {
-            const grid = document.getElementById('product-grid');
-            grid.innerHTML = '';
-            products.forEach((product, idx) => {
-                const card = document.createElement('div');
-                card.className = 'product-card';
-                card.innerHTML = `
-                    <div class="product-image">
-                        <img src="${product.img}" alt="${product.name}">
-                    </div>
-                    <div class="product-info">
-                        <h3>${product.name}</h3>
-                        <div class="product-price">$${product.price.toFixed(2)}</div>
-                        <p class="product-description">${product.desc}</p>
-                        <button class="add-to-cart-btn" onclick="addToCart(${idx})">Add to Cart</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        // Cart Functionality
-        let cart = [];
-
-        function addToCart(idx) {
-            const product = products[idx];
-            const existing = cart.find(item => item.name === product.name);
-            if (existing) {
-                existing.quantity++;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
-            updateCartUI();
-            openCart();
-        }
-
-        function updateCartUI() {
-            const cartItems = document.getElementById('cart-items');
-            cartItems.innerHTML = '';
-            let total = 0;
-            cart.forEach((item, i) => {
-                total += item.price * item.quantity;
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    ${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}
-                    <button style="float:right; background:none; border:none; color:var(--soft-pink); font-weight:bold; cursor:pointer;" onclick="removeFromCart(${i})">&times;</button>
-                `;
-                cartItems.appendChild(li);
-            });
-            document.querySelector('.cart-total').textContent = `Total: $${total.toFixed(2)}`;
-            document.getElementById('cart-icon').textContent = `Cart (${cart.reduce((a,b)=>a+b.quantity,0)})`;
-        }
-
-        function removeFromCart(i) {
-            cart.splice(i, 1);
-            updateCartUI();
-        }
-
-        function openCart() {
-            document.getElementById('cart-sidebar').classList.add('open');
-        }
-
-        function closeCart() {
-            document.getElementById('cart-sidebar').classList.remove('open');
-        }
-
-        function checkout() {
-            if(cart.length === 0) {
-                alert('Your cart is empty!');
-                return;
-            }
-            alert('Proceeding to checkout...');
-            // Implement checkout logic here
-        }
-
-        function handleLogout() {
-            // In a real application, this would clear session data
-            window.location.href = '/login/';
-        }
-
-        // On page load
-        renderProducts();
-        updateCartUI();
-    </script>
+        </script>
 </body>
 </html>

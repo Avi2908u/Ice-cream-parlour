@@ -18,19 +18,19 @@ class Vendor(models.Model):
 
     def __str__(self):
         return self.shop_name
-
-class Product(models.Model):
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    stock = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+class IceCream(models.Model):
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name="icecreams")
+    flavour = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)  
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.flavour})"
 
 class CartItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE)  # Fix here
+    product = models.ForeignKey('IceCream', on_delete=models.CASCADE)  # Fix here
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
@@ -39,11 +39,12 @@ class CartItem(models.Model):
 
 class Sale(models.Model):
 
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(IceCream, on_delete=models.CASCADE)
     quantity_sold = models.PositiveIntegerField()
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_sales', null=True, blank=True)
     date_sold = models.DateField(default=timezone.now)
-    vendor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, limit_choices_to={'role': 'vendor'})
     units_sold = models.PositiveIntegerField()
+    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     timestamp = models.DateTimeField(auto_now_add=True)
 
