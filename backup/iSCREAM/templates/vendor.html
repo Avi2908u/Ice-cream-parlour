@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard - Ice Cream Management System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-brown: #6b3e26;
+            --soft-pink: #ffc5d9;
+            --mint-green: #c2f2d0;
+            --cream-yellow: #fdf5c9;
+            --peach-orange: #ffcb85;
+            --dark-bg: #0a0a0a;
+            --glass-white: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--primary-brown) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--soft-pink) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, var(--mint-green) 0%, transparent 50%),
+                radial-gradient(circle at 60% 20%, var(--peach-orange) 0%, transparent 50%);
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            box-shadow: 
+                0 25px 45px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1200px;
+            min-height: 700px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            padding: 50px;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                var(--soft-pink) 90deg,
+                var(--mint-green) 180deg,
+                var(--peach-orange) 270deg,
+                transparent 360deg
+            );
+            opacity: 0.05;
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.8em;
+            color: var(--cream-yellow);
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px var(--peach-orange);
+        }
+
+        .logout-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-family: 'Exo 2', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
+        }
+
+        .welcome-message {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: 25px;
+            margin-bottom: 40px;
+            text-align: center;
+            color: white;
+            font-size: 1.3em;
+            font-weight: 300;
+            letter-spacing: 1px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-message h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--cream-yellow);
+            text-shadow: 0 0 20px var(--peach-orange);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            color: white;
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, var(--mint-green) 0%, transparent 70%);
+            opacity: 0.1;
+            animation: rotate 20s linear infinite;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 
+                0 30px 60px rgba(0, 0, 0, 0.4),
+                0 0 40px rgba(194, 242, 208, 0.3);
+        }
+
+        .stat-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 3em;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+            color: var(--cream-yellow);
+            text-shadow: 0 0 20px var(--peach-orange);
+        }
+
+        .stat-card p {
+            font-size: 1.3em;
+            position: relative;
+            z-index: 1;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: var(--mint-green);
+            text-transform: uppercase;
+        }
+
+        .table-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            margin-top: 40px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--cream-yellow) 0%, var(--peach-orange) 100%);
+            color: var(--primary-brown);
+            padding: 25px;
+            font-size: 1.4em;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'Orbitron', monospace;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            color: white;
+        }
+
+        th {
+            background: rgba(255, 197, 217, 0.2);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--soft-pink);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.01);
+            transition: all 0.3s ease;
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--mint-green);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                min-height: 500px;
+                padding: 30px 25px;
+            }
+            
+            .dashboard-title {
+                font-size: 2.2em;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 3s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 4s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 0.5s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 1.5s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 2.5s;"></div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">VENDOR PORTAL</h1>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        
+        <div class="welcome-message">
+            <h2>Welcome, Vendor</h2>
+            <p>Advanced inventory management and real-time sales analytics</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>45</h3>
+                <p>Items in Stock</p>
+            </div>
+            <div class="stat-card">
+                <h3>85</h3>
+                <p>Items Sold Today</p>
+            </div>
+            <div class="stat-card">
+                <h3>$1,275</h3>
+                <p>Today's Revenue</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="table-header">
+                Inventory & Sales Report
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Stock Left</th>
+                        <th>Sold Today</th>
+                        <th>Price</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Vanilla Ice Cream</td>
+                        <td>15</td>
+                        <td>25</td>
+                        <td>$3.50</td>
+                        <td>$87.50</td>
+                    </tr>
+                    <tr>
+                        <td>Chocolate Ice Cream</td>
+                        <td>12</td>
+                        <td>30</td>
+                        <td>$4.00</td>
+                        <td>$120.00</td>
+                    </tr>
+                    <tr>
+                        <td>Strawberry Ice Cream</td>
+                        <td>8</td>
+                        <td>20</td>
+                        <td>$3.75</td>
+                        <td>$75.00</td>
+                    </tr>
+                    <tr>
+                        <td>Mint Chocolate Chip</td>
+                        <td>10</td>
+                        <td>10</td>
+                        <td>$4.25</td>
+                        <td>$42.50</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function handleLogout() {
+            // In a real application, this would clear session data
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

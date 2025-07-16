@@ -1,23 +1,17 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
-from .forms import IceCreamForm
+from .models import Sale, IceCream, Vendor, User
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
 from django.contrib.auth import authenticate, login, get_user_model
-from rest_framework import generics ,viewsets, permissions
+from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view, action
-from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSerializer, FlavorProposalSerializer
+from rest_framework.decorators import api_view
+from .serializers import UserSerializer, IceCreamSerializer
 from django.contrib import messages
-from django.views.decorators.csrf import csrf_protect, csrf_exempt
-from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.contrib.admin.views.decorators import staff_member_required
 
 
 class RegisterView(generics.CreateAPIView):
@@ -97,8 +91,6 @@ def signup_page(request):
         return redirect('/login/')  
     return render(request, 'signup.html')
 
-@csrf_protect
-@csrf_exempt
 def login_page(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -110,76 +102,63 @@ def login_page(request):
         if user:
             login(request, user)
             if user_type == 'owner':
-                return redirect('/owner/')  
+                return redirect('owner')  
             elif user_type == 'vendor':
                 if Vendor.objects.filter(user=user).exists():
-                    return redirect('/vendor/')
+                    return redirect('vendor')
                 else:
                     return render(request, 'login.html', {'error': 'Vendor profile not found.'})
             elif user_type == 'customer':
-                return redirect('/customer/')  
+                return redirect('customer')  
             else:
                 return render(request, 'login.html', {'error': 'Invalid user type'})
         else:
             return render(request, 'login.html', {'error': 'Invalid credentials'})
 
     return render(request, 'login.html')
-
 @login_required
 def owner_dashboard(request):
-    today = date.today()
-    vendors = Vendor.objects.prefetch_related('icecreams').all()
-    proposals = FlavorProposal.objects.filter(status='pending')
-    total_items_sold = 0
-    total_revenue = 0
-    total_stock_items = 0
+    vendors = Vendor.objects.all()
 
-    vendor_data = []
+    # Vendor report list
+    vendor_reports = []
+
+    total_units_sold = 0
+    total_revenue = 0
 
     for vendor in vendors:
-        icecreams = vendor.icecreams.all()
-        stock_items = icecreams.aggregate(total=Sum('stock'))['total'] or 0
+        vendor_sales = Sale.objects.filter(product__vendor=vendor)
+        units_sold = vendor_sales.aggregate(total=Sum('quantity_sold'))['total'] or 0
 
-        sales_today = Sale.objects.filter(
-            product__in=icecreams,
-            date_sold=today
-        )
+        revenue = vendor_sales.aggregate(
+            total=Sum(ExpressionWrapper(
+                F('quantity_sold') * F('product__price'),
+                output_field=FloatField()
+            ))
+        )['total'] or 0
 
-        items_sold_today = sales_today.aggregate(sold=Sum('quantity_sold'))['sold'] or 0
-
-        revenue_today = sales_today.aggregate(
-            revenue=Sum(ExpressionWrapper(F('quantity_sold') * F('product__price'), output_field=FloatField()))
-        )['revenue'] or 0
-
-        vendor_data.append({
+        vendor_reports.append({
             'shop_name': vendor.shop_name,
-            'vendor_id': vendor.id,
-            'joined_date': vendor.user.date_joined.strftime('%b %Y'),
-            'revenue_today': revenue_today,
-            'stock_items': stock_items,
-            'sold_today': items_sold_today,
+            'units_sold': units_sold,
+            'revenue': revenue
         })
 
-        total_items_sold += items_sold_today
-        total_revenue += revenue_today
-        total_stock_items += stock_items
+        total_units_sold += units_sold
+        total_revenue += revenue
 
     context = {
-        'vendor_data': vendor_data,
-        'total_vendors': vendors.count(),
         'total_revenue': total_revenue,
-        'total_items_sold': total_items_sold,
-        'total_stock_items': total_stock_items,
-        'pending_proposals': proposals,  # Moved here
+        'total_units_sold': total_units_sold,
+        'active_vendors': vendors.count(),
+        'vendor_reports': vendor_reports
     }
 
-    return render(request, "owner.html", context)
-
+    return render(request, 'owner.html', context)   
 @login_required
+@api_view(['GET'])
 def vendor_dashboard(request):
     vendor = Vendor.objects.get(user=request.user) 
     icecreams = IceCream.objects.filter(vendor=vendor)
-    vendor_proposals = FlavorProposal.objects.filter(vendor=request.user)
     serializer = IceCreamSerializer(icecreams, many=True)
     today = date.today()
     sales_today = Sale.objects.filter(product__vendor=vendor, date_sold=today)
@@ -266,10 +245,10 @@ def buy_ice_cream(request):
             date_sold=timezone.now().date()
         )
         messages.success(request, f"Successfully purchased {quantity} of {ice_cream.name}!")
-        return redirect('/customer/')
+        return redirect('customer')
         
     messages.error(request, "Invalid request method.")
-    return redirect('/customer/')
+    return redirect('customer')
 
 @login_required
 def checkout(request):
@@ -299,78 +278,3 @@ def checkout(request):
 
     request.session['cart'] = {}
     return render(request, 'checkout_success.html')
-
-@login_required
-def add_flavour(request):
-    vendor = get_object_or_404(Vendor, user=request.user)
-
-    if request.method == 'POST':
-        form = IceCreamForm(request.POST)
-        if form.is_valid():
-            ice_cream = form.save(commit=False)
-            ice_cream.vendor = vendor  
-            ice_cream.save()
-            return redirect('vendor_dashboard')
-    else:
-        form = IceCreamForm()
-
-    return render(request, 'add_flavour.html', {'form': form})
-
-def submit_flavour_proposal(request):
-    if request.method == 'POST':
-        print("svbsdvbs")
-        vendor= request.user
-        name = request.POST.get('flavor_name')
-        description = request.POST.get('description')
-        price = request.POST.get('base_price')
-        image = request.FILES.get('image')  
-
-        if not name or not description:
-            messages.error(request, "Please fill out both fields.")
-            return redirect('/vendor/')
-
-        FlavorProposal.objects.create(
-            vendor=vendor,
-            name=name,
-            price=price,
-            description=description,
-            status='pending',
-            image=image
-        )
-
-        messages.success(request, "Proposal submitted successfully!")
-        return redirect('/vendor/')
-    
-    return redirect('/vendor/')
-    
-class FlavorProposalViewSet(viewsets.ModelViewSet):
-    queryset = FlavorProposal.objects.all()
-    serializer_class = FlavorProposalSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        if hasattr(user, 'vendor'):
-            return FlavorProposal.objects.filter(vendor=user)
-        return FlavorProposal.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
-
-
-@require_POST
-@staff_member_required
-def approve_proposal(request, proposal_id):
-    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
-    proposal.status = 'accepted'
-    proposal.save()
-    return HttpResponseRedirect(reverse('owner'))
-
-@require_POST
-@staff_member_required
-def reject_proposal(request, proposal_id):
-    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
-    proposal.status = 'rejected'
-    proposal.save()
-    return HttpResponseRedirect(reverse('owner'))
-    
