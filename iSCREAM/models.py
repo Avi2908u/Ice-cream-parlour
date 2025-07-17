@@ -24,31 +24,28 @@ class IceCream(models.Model):
     flavour = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=6, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)  
+    description = models.TextField(default="")
+    image = models.ImageField(upload_to='proposed_flavors/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.flavour})"
 
 class FlavorProposal(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('rejected', 'Rejected'),
-    ]
-
     vendor = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=6, decimal_places=2)
     description = models.TextField()
+    stock = models.PositiveIntegerField(default=0) 
     image = models.ImageField(upload_to='proposed_flavors/', null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('rejected', 'Rejected')
+        ('approved', 'Approved'),
+        ('declined', 'Declined')
     ], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.flavor_name} - {self.status}"
+        return f"{self.name} - {self.status}"
 
 
 class CartItem(models.Model):

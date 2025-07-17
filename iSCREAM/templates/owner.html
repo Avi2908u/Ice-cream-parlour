@@ -568,9 +568,6 @@
         <div class="dashboard-header">
             <h1 class="dashboard-title">OWNER PORTAL</h1>
             <div class="header-actions">
-                <button class="btn btn-secondary notification-badge" data-count="3" onclick="showRegistrations()">
-                    New Registrations
-                </button>
                 <button class="btn btn-primary" onclick="addVendor()">Add Vendor</button>
                 <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
             </div>
@@ -650,6 +647,7 @@
                         <tr>
                             <th>Vendor Name</th>
                             <th>Flavor</th>
+                            <th>Stock</th>
                             <th>Price</th>
                             <th>Description</th>
                             <th>Applied Date</th>
@@ -660,14 +658,14 @@
                 {% for proposal in pending_proposals %}
                 <tr>
                     <td>{{ proposal.vendor.username }}</td>
-                    <td>{{ proposal.flavor_name }}</td>
+                    <td>{{ proposal.name }}</td>
+                    <td>{{ proposal.stock }}</td>
                     <td>₹{{ proposal.price }}</td>
                     <td>{{ proposal.description }}</td>
-                    <td>{{ proposal.applied_date|date:"Y-m-d H:i" }}</td>
+                    <td>{{ proposal.created_at |date:"Y-m-d H:i" }}</td>
                     <td>
-                        <a href="{% url 'handle_proposal' proposal.id 'approve' %}" class="btn-accept">Accept</a>
-                        <a href="{% url 'handle_proposal' proposal.id 'decline' %}" class="btn-reject">Reject</a>
-                        <button class="btn-accept" onclick>Yearly</button>
+                    <button class="btn-accept" onclick="window.location.href='{% url 'approve_proposal' proposal.id  %}'">Approve</button>
+                    <button class="btn-reject" onclick="window.location.href='{% url 'reject_proposal' proposal.id  %}'">Decline</button>
 
                     </td>
                 </tr>

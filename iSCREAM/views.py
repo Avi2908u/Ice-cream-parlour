@@ -127,35 +127,29 @@ def login_page(request):
 
 @login_required
 def approve_proposal(request, proposal_id):
-    if request.user.role != 'owner':
-        messages.error(request, "Not authorized to approve proposals")
-        return redirect('owner')
-    
+
     proposal = get_object_or_404(FlavorProposal, id=proposal_id)
     
     vendor = get_object_or_404(Vendor, user=proposal.vendor)
-    
-    # Create an IceCream object from the approved proposal
-    ice_cream = IceCream.objects.create(
+    if proposal.status == 'pending':
+      IceCream.objects.create(
         vendor=vendor,
         flavour=proposal.name,
         price=proposal.price,
         description=proposal.description,
-        stock=0,  
-        image=proposal.image if proposal.image else None
-    )
+        stock=proposal.stock,  
+        image=proposal.image 
+      )
     
-    # Update proposal status to accepted
-    proposal.status = 'accepted'
-    proposal.save()
+      proposal.status = 'approved'
+      proposal.save()
     
     messages.success(request, f"Proposal '{proposal.name}' has been approved and added to the catalog!")
-    return redirect('owner')
+    return redirect('/owner/')
 
 
 @login_required
 def reject_proposal(request, proposal_id):
-    # Check if user is owner
     if request.user.role != 'owner':
         messages.error(request, "Not authorized to reject proposals")
         return redirect('owner')
@@ -167,7 +161,7 @@ def reject_proposal(request, proposal_id):
     proposal.delete()
     
     messages.success(request, f"Proposal '{proposal_name}' has been rejected and removed!")
-    return redirect('owner')
+    return redirect('/owner/')
 
 @login_required
 def owner_dashboard(request):
@@ -247,13 +241,24 @@ def vendor_dashboard(request):
             'price': product.price,
             'revenue': revenue,
         })
-
+    proposal_report = []
+    for proposal in vendor_proposals:
+      proposal_report.append({
+        'flavor': proposal.name,
+        'stock': proposal.stock,
+        'price': proposal.price,
+        'description': proposal.description,
+        'status': proposal.status,
+        'applied_date': proposal.created_at,
+    })
     context = {
         'vendor': vendor,
         'total_stock': total_stock,
         'total_items_sold_today': total_items_sold_today,
         'total_revenue_today': total_revenue_today,
         'report': report,
+        'proposals': proposal_report, 
+
     }
     return render(request, 'vendor.html', context)
 
@@ -370,6 +375,8 @@ def submit_flavour_proposal(request):
         description = request.POST.get('description')
         price = request.POST.get('base_price')
         image = request.FILES.get('image')  
+        stock = request.POST.get('stock')  
+
 
         if not name or not description:
             messages.error(request, "Please fill out both fields.")
@@ -381,7 +388,8 @@ def submit_flavour_proposal(request):
             price=price,
             description=description,
             status='pending',
-            image=image
+            image=image,
+            stock=stock
         )
 
         messages.success(request, "Proposal submitted successfully!")
@@ -402,13 +410,3 @@ class FlavorProposalViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
-
-
-def handle_proposal(request, proposal_id, action):
-    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
-    if action == 'approve':
-        proposal.status = 'approved'
-    elif action == 'decline':
-        proposal.status = 'declined'
-    proposal.save()
-    return redirect('owner_dashboard')
