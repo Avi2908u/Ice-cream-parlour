@@ -67,7 +67,7 @@
             padding: 50px;
         }
 
-        .container::before {
+        {% comment "" %}%}.container::before {
             content: '';
             position: absolute;
             top: -50%;
@@ -89,7 +89,7 @@
         @keyframes rotate {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
+        }{% endcomment %}
 
         /* Navigation Bar */
         .navbar {
@@ -129,14 +129,12 @@
             color: var(--peach-orange);
         }
 
-        .logout-btn {
-            padding: 10px 18px;
-            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
-            color: var(--primary-brown);
+        .btn {
+            padding: 12px 25px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 16px;
             transition: all 0.3s ease;
             font-weight: 600;
             letter-spacing: 1px;
@@ -144,7 +142,17 @@
             text-transform: uppercase;
         }
 
-        .logout-btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--cream-yellow) 0%, var(--peach-orange) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
         }
@@ -336,7 +344,6 @@
             margin-bottom: 10px;
         }
 
-        /* Add to Cart Button */
         .add-to-cart-btn {
             margin-top: 15px;
             padding: 10px 20px;
@@ -543,10 +550,10 @@
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
-            <ul class="nav-links">
-                <li><button class="logout-btn">Logout</button></li>
-            </ul>
+                <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
+            </script>
         </nav>
+
 
         <div class="dashboard-header">
             <h1 class="dashboard-title">CUSTOMER HUB</h1>

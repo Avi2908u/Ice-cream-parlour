@@ -5,7 +5,7 @@ from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
 from .forms import IceCreamForm
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
-from django.contrib.auth import authenticate, login, get_user_model
+from django.contrib.auth import authenticate, login, get_user_model, logout
 from rest_framework import generics ,viewsets, permissions
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -15,9 +15,8 @@ from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSeria
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.contrib.admin.views.decorators import staff_member_required
+
+
 
 
 class RegisterView(generics.CreateAPIView):
@@ -126,8 +125,11 @@ def login_page(request):
     return render(request, 'login.html')
 
 
-def approve_proposal(request, proposal_id):
+def logout_view(request):
+    logout(request)
+    return redirect('/login/')
 
+def approve_proposal(request, proposal_id):
     proposal = get_object_or_404(FlavorProposal, id=proposal_id)
     
     vendor = get_object_or_404(Vendor, user=proposal.vendor)
@@ -143,7 +145,7 @@ def approve_proposal(request, proposal_id):
     
       proposal.status = 'approved'
       proposal.save()
-    # Update proposal status to accepted
+      
     proposal.status = 'approved'
     proposal.save()
     
@@ -407,16 +409,4 @@ def submit_flavour_proposal(request):
     
     return redirect('/vendor/')
     
-class FlavorProposalViewSet(viewsets.ModelViewSet):
-    queryset = FlavorProposal.objects.all()
-    serializer_class = FlavorProposalSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        if hasattr(user, 'vendor'):
-            return FlavorProposal.objects.filter(vendor=user)
-        return FlavorProposal.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
