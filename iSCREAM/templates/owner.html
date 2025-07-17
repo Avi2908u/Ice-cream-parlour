@@ -598,16 +598,12 @@
                 <h3>{{ total_stock }}</h3>
                 <p>Total Stock Items</p>
             </div>
-            <div class="stat-card">
-                <h3>3</h3>
-                <p>Pending Applications</p>
-            </div>
         </div>
 
         <!-- Vendor Performance Section -->
         <div class="dashboard-section">
             <div class="section-header">
-                <h2 class="section-title">Vendor Performance</h2>
+                <h2 class="section-title">Vendor Monthly Performance</h2>
                 <div class="period-selector">
                     <button class="period-btn active" onclick="switchPeriod('month', this)">Monthly</button>
                     <button class="period-btn" onclick="switchPeriod('year', this)">Yearly</button>
@@ -640,55 +636,46 @@
 </div>
 {% endfor %}
  
-       
-        <div class="dashboard-section">             
-    <div class="section-header">                 
-        <h2 class="section-title">New Flavor Proposals</h2>             
-    </div>                          
-    <div class="table-container">                 
-        <div class="table-header">                     
-            Pending Flavor Applications                 
-        </div>                 
-        <table>                     
-            <thead>                         
-                <tr>                             
-                    <th>Vendor Name</th>                             
-                    <th>Flavor</th>                             
-                    <th>Price</th>                             
-                    <th>Description</th>                             
-                    <th>Applied Date</th>                             
-                    <th>Actions</th>                         
-                </tr>                     
-            </thead>                     
-            <tbody>
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2 class="section-title">New Flavor Proposals</h2>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-header">
+                    Pending Flavor Applications
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Flavor</th>
+                            <th>Price</th>
+                            <th>Description</th>
+                            <th>Applied Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                 {% for proposal in pending_proposals %}
-                <tr>                             
-                    <td>{{ proposal.vendor.first_name }}</td>                             
-                    <td>{{ proposal.name }}</td>                             
-                    <td>${{ proposal.price }}</td>                             
-                    <td>{{ proposal.description }}</td>                             
-                    <td>{{ proposal.created_at|date:"M d, Y" }}</td>                             
-                    <td>                                 
-                        <div class="action-buttons">                                     
-                            <form method="post" action="{% url 'approve_proposal' proposal.id %}" style="display: inline;">
-                                
-                                <button type="submit" class="btn-action btn-accept">Accept</button>
-                            </form>
-                            <form method="post" action="{% url 'reject_proposal' proposal.id %}" style="display: inline;">
-
-                                <button type="submit" class="btn-action btn-reject">Reject</button>
-                            </form>
-                        </div>                             
-                    </td>                         
-                </tr>
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 20px;">No pending proposals</td>
+                    <td>{{ proposal.vendor.username }}</td>
+                    <td>{{ proposal.flavor_name }}</td>
+                    <td>₹{{ proposal.price }}</td>
+                    <td>{{ proposal.description }}</td>
+                    <td>{{ proposal.applied_date|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'handle_proposal' proposal.id 'approve' %}" class="btn-accept">Accept</a>
+                        <a href="{% url 'handle_proposal' proposal.id 'decline' %}" class="btn-reject">Reject</a>
+                        <button class="btn-accept" onclick>Yearly</button>
+
+                    </td>
                 </tr>
+                {% empty %}
+                <tr><td colspan="6">No pending proposals.</td></tr>
                 {% endfor %}
-                </tbody>                 
-            </table>
-        </div>             
-    </div>
-</body>
-</html>
+            </tbody>
+                </div>
+            </body>
+            </html>
     
