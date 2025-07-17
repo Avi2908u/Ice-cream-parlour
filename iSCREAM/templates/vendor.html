@@ -472,29 +472,6 @@
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(180deg); }
         }
-    
-    .messages {
-        list-style: none;
-        padding: 10px;
-        margin: 0 auto;
-        max-width: 600px;
-    }
-    .message {
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        font-weight: bold;
-    }
-    .message.success {
-        background-color: #d4edda;
-        color: #155724;
-    }
-    .message.error {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-
 
         .notification {
             position: fixed;
@@ -543,7 +520,6 @@
     </style>
 </head>
 <body>
-    
     <div class="floating-particles">
         <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
         <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
@@ -647,16 +623,8 @@
                     <button type="submit" class="btn btn-primary">Submit Proposal</button>
                 </div>
             </form>
+   
  <script>
-    {% if messages %}
-       window.onload = function() {
-        setTimeout(function() {
-            {% for message in messages %}
-                alert("{{ message|escapejs }}");
-            {% endfor %}
-        }, 100);  
-    };
-    {% endif %}
 document.addEventListener("DOMContentLoaded", function () {
     function openProposalModal() {
         document.getElementById("proposalModal").classList.add("show");
