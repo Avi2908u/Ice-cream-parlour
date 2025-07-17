@@ -169,6 +169,8 @@ def owner_dashboard(request):
     today = date.today()
     vendors = Vendor.objects.prefetch_related('icecreams').all()
     proposals = FlavorProposal.objects.filter(status='pending')
+    approved_stock = FlavorProposal.objects.filter(status='approved').aggregate(
+    total=Sum('stock'))['total'] or 0
     total_items_sold = 0
     total_revenue = 0
     total_stock_items = 0
@@ -210,6 +212,8 @@ def owner_dashboard(request):
         'total_items_sold': total_items_sold,
         'total_stock_items': total_stock_items,
         'pending_proposals': proposals, 
+        'total_stock': approved_stock,
+
     }
 
     return render(request, "owner.html", context)
@@ -234,7 +238,7 @@ def vendor_dashboard(request):
         revenue = sold_today * float(product.price)
         report.append({
             'id': product.id,
-            'flavour': product.flavour,
+            'name': product.flavour,
             'stock': product.stock,
             'sold_today': sold_today,
             'price': product.price,
@@ -243,7 +247,7 @@ def vendor_dashboard(request):
     proposal_report = []
     for proposal in vendor_proposals:
       proposal_report.append({
-        'flavor': proposal.name,
+        'name': proposal.name,
         'stock': proposal.stock,
         'price': proposal.price,
         'description': proposal.description,
@@ -404,17 +408,4 @@ def submit_flavour_proposal(request):
         return redirect('/vendor/')
     
     return redirect('/vendor/')
-    
-class FlavorProposalViewSet(viewsets.ModelViewSet):
-    queryset = FlavorProposal.objects.all()
-    serializer_class = FlavorProposalSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        if hasattr(user, 'vendor'):
-            return FlavorProposal.objects.filter(vendor=user)
-        return FlavorProposal.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
