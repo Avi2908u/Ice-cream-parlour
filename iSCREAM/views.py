@@ -170,7 +170,7 @@ def owner_dashboard(request):
         'total_revenue': total_revenue,
         'total_items_sold': total_items_sold,
         'total_stock_items': total_stock_items,
-        'pending_proposals': proposals,  # Moved here
+        'pending_proposals': proposals, 
     }
 
     return render(request, "owner.html", context)
@@ -358,19 +358,11 @@ class FlavorProposalViewSet(viewsets.ModelViewSet):
         serializer.save(vendor=self.request.user)
 
 
-@require_POST
-@staff_member_required
-def approve_proposal(request, proposal_id):
+def handle_proposal(request, proposal_id, action):
     proposal = get_object_or_404(FlavorProposal, id=proposal_id)
-    proposal.status = 'accepted'
+    if action == 'approve':
+        proposal.status = 'approved'
+    elif action == 'decline':
+        proposal.status = 'declined'
     proposal.save()
-    return HttpResponseRedirect(reverse('owner'))
-
-@require_POST
-@staff_member_required
-def reject_proposal(request, proposal_id):
-    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
-    proposal.status = 'rejected'
-    proposal.save()
-    return HttpResponseRedirect(reverse('owner'))
-    
+    return redirect('owner_dashboard')

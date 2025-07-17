@@ -598,16 +598,12 @@
                 <h3>{{ total_stock }}</h3>
                 <p>Total Stock Items</p>
             </div>
-            <div class="stat-card">
-                <h3>3</h3>
-                <p>Pending Applications</p>
-            </div>
         </div>
 
         <!-- Vendor Performance Section -->
         <div class="dashboard-section">
             <div class="section-header">
-                <h2 class="section-title">Vendor Performance</h2>
+                <h2 class="section-title">Vendor Monthly Performance</h2>
                 <div class="period-selector">
                     <button class="period-btn active" onclick="switchPeriod('month', this)">Monthly</button>
                     <button class="period-btn" onclick="switchPeriod('year', this)">Yearly</button>
@@ -640,72 +636,6 @@
 </div>
 {% endfor %}
  
-        <!-- Vendor Registration Management -->
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h2 class="section-title">Vendor Registration Requests</h2>
-            </div>
-            
-            <div class="table-container">
-                <div class="table-header">
-                    Pending Vendor Applications
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Applicant Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Applied Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Emma Wilson</td>
-                            <td>emma.wilson@email.com</td>
-                            <td>+1 (555) 123-4567</td>
-                            <td>Jul 14, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>David Chen</td>
-                            <td>david.chen@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 15, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Lisa Rodriguez</td>
-                            <td>lisa.rodriguez@email.com</td>
-                            <td>+1 (555) 345-6789</td>
-                            <td>Jul 16, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Vendor Registration Management -->
         <div class="dashboard-section">
             <div class="section-header">
                 <h2 class="section-title">New Flavor Proposals</h2>
@@ -721,52 +651,30 @@
                             <th>Vendor Name</th>
                             <th>Flavor</th>
                             <th>Price</th>
-                            <th>Ingredients</th>
+                            <th>Description</th>
                             <th>Applied Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Emma Wilson</td>
-                            <td>emma.wilson@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 14, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>David Chen</td>
-                            <td>david.chen@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 15, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Lisa Rodriguez</td>
-                            <td>lisa.rodriguez@email.com</td>
-                            <td>+1 (555) 345-6789</td>
-                            <td>Jul 16, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
+                {% for proposal in pending_proposals %}
+                <tr>
+                    <td>{{ proposal.vendor.username }}</td>
+                    <td>{{ proposal.flavor_name }}</td>
+                    <td>₹{{ proposal.price }}</td>
+                    <td>{{ proposal.description }}</td>
+                    <td>{{ proposal.applied_date|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <a href="{% url 'handle_proposal' proposal.id 'approve' %}" class="btn-accept">Accept</a>
+                        <a href="{% url 'handle_proposal' proposal.id 'decline' %}" class="btn-reject">Reject</a>
+                        <button class="btn-accept" onclick>Yearly</button>
+
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6">No pending proposals.</td></tr>
+                {% endfor %}
+            </tbody>
                 </div>
             </body>
             </html>
