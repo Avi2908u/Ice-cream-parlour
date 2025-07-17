@@ -125,7 +125,7 @@ def login_page(request):
 
     return render(request, 'login.html')
 
-@login_required
+
 def approve_proposal(request, proposal_id):
     if request.user.role != 'owner':
         messages.error(request, "Not authorized to approve proposals")
@@ -153,7 +153,6 @@ def approve_proposal(request, proposal_id):
     return redirect('owner')
 
 
-@login_required
 def reject_proposal(request, proposal_id):
     # Check if user is owner
     if request.user.role != 'owner':
@@ -171,8 +170,6 @@ def reject_proposal(request, proposal_id):
 
 @login_required
 def owner_dashboard(request):
-    
-    
     today = date.today()
     vendors = Vendor.objects.prefetch_related('icecreams').all()
     proposals = FlavorProposal.objects.filter(status='pending')

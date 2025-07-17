@@ -671,17 +671,16 @@
                     <td>                                 
                         <div class="action-buttons">                                     
                             <form method="post" action="{% url 'approve_proposal' proposal.id %}" style="display: inline;">
-                                {% csrf_token %}
+                                
                                 <button type="submit" class="btn-action btn-accept">Accept</button>
                             </form>
                             <form method="post" action="{% url 'reject_proposal' proposal.id %}" style="display: inline;">
-                                {% csrf_token %}
+
                                 <button type="submit" class="btn-action btn-reject">Reject</button>
                             </form>
                         </div>                             
                     </td>                         
                 </tr>
-                {% empty %}
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 20px;">No pending proposals</td>
                 </tr>
