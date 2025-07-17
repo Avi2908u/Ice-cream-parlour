@@ -540,34 +540,13 @@
         <div class="particle" style="left: 90%; animation-delay: 2.5s;"></div>
     </div>
 
-    <!-- Messages (if any) -->
-    <!-- {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li class="{{ message.tags }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %} -->
-
-    <!-- Vendor List (outside container for demo) -->
-    <!-- {% for vendor in vendors %}
-        <div class="vendor-section">
-            <h2>{{ vendor.shop_name }}</h2>
-            <ul>
-                {% for icecream in vendor.icecreams.all %}
-                    <li>{{ icecream.flavour }} - ₹{{ icecream.price }} (Stock: {{ icecream.stock }})</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endfor %} -->
-
     <div class="container">
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
             <ul class="nav-links">
-                <li><a href="#" id="cart-icon">Cart (0)</a></li>
-                <li><button class="logout-btn">Logout</button></li>
+                <li><button class="logout-btn" href="#" id="cart-icon">Cart (0)</button></li>
+                <li><button class="logout-btn" onclick="window.location.href='/login/'">Logout</button></li>
             </ul>
         </nav>
 
@@ -596,7 +575,7 @@
                                     Proposed by: {{ proposal.vendor.username }}
                                 </p>
                                 {% if proposal.image %}
-                                    <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
+                                    <img src="{{ proposal.image }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
                                 {% endif %}
                                 <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
                                     Add to Cart
