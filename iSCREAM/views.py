@@ -271,6 +271,8 @@ def customer_dashboard(request):
         'vendors': vendors,  
         'accepted_proposals': accepted_proposals
     })
+
+
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(IceCream, id=product_id)

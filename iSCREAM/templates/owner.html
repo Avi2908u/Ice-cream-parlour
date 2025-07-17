@@ -344,25 +344,50 @@
         }
 
         .btn-action {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-family: 'Exo 2', sans-serif;
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 0 5px;
+            transition: background-color 0.3s ease, transform 0.2s;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        .btn-accept {
-            background: var(--success-green);
-            color: white;
-        }
+        .btn-solid {
+    padding: 8px 16px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    border-radius: 12px;
+    border: none;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 6px;
+    background-color: transparent;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    color: white;
+    display: inline-block;
+}
 
-        .btn-reject {
-            background: var(--danger-red);
-            color: white;
-        }
+.btn-solid.accept {
+    background-color: #22c55e; /* green-500 */
+}
+
+.btn-solid.decline {
+    background-color: #ef4444; /* red-500 */
+}
+
+.btn-solid:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+
 
         .btn-pending {
             background: var(--warning-yellow);
@@ -548,6 +573,9 @@
             .vendor-metrics {
                 justify-content: center;
             }
+            
+        
+
         }
     </style>
 </head>
@@ -660,10 +688,10 @@
                     <td>{{ proposal.description }}</td>
                     <td>{{ proposal.created_at |date:"Y-m-d H:i" }}</td>
                     <td>
-                    <button class="btn-accept" onclick="window.location.href='{% url 'approve_proposal' proposal.id  %}'">Approve</button>
-                    <button class="btn-reject" onclick="window.location.href='{% url 'reject_proposal' proposal.id  %}'">Decline</button>
-
+                        <a href="{% url 'approve_proposal' proposal.id %}" class="btn-solid accept">APPROVE</a>
+                        <a href="{% url 'reject_proposal' proposal.id %}" class="btn-solid decline">DECLINE</a>
                     </td>
+
                 </tr>
                 {% empty %}
                 <tr><td colspan="6">No pending proposals.</td></tr>
