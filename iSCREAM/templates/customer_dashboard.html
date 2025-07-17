@@ -544,7 +544,6 @@
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
             <ul class="nav-links">
-                <li><a href="#" id="cart-icon">Cart (0)</a></li>
                 <li><button class="logout-btn">Logout</button></li>
             </ul>
         </nav>
@@ -576,7 +575,7 @@
                                     <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
                                 {% endif %}
                                 <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
-                                    Add to Cart
+                                    Add to Cart es
                                 </button>
                             </div>
                         {% endfor %}
