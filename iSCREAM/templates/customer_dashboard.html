@@ -60,38 +60,14 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             overflow: hidden;
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
             min-height: 700px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             padding: 50px;
         }
 
-        {% comment %} .container::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: conic-gradient(
-                from 0deg,
-                transparent 0deg,
-                var(--soft-pink) 90deg,
-                var(--mint-green) 180deg,
-                var(--peach-orange) 270deg,
-                transparent 360deg
-            );
-            opacity: 0.05;
-            animation: rotate 30s linear infinite;
-        }
-
-        @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        } {% endcomment %}
-
-        /* Navigation Bar */
+          /* Navigation Bar */
         .navbar {
             display: flex;
             justify-content: space-between;
@@ -129,14 +105,12 @@
             color: var(--peach-orange);
         }
 
-        .logout-btn {
-            padding: 10px 18px;
-            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
-            color: var(--primary-brown);
+        .btn {
+            padding: 12px 25px;
             border: none;
             border-radius: 12px;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 16px;
             transition: all 0.3s ease;
             font-weight: 600;
             letter-spacing: 1px;
@@ -144,7 +118,17 @@
             text-transform: uppercase;
         }
 
-        .logout-btn:hover {
+        .btn-primary {
+            background: linear-gradient(135deg, var(--soft-pink) 0%, var(--mint-green) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--cream-yellow) 0%, var(--peach-orange) 100%);
+            color: var(--primary-brown);
+        }
+
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(255, 197, 217, 0.4);
         }
@@ -336,7 +320,6 @@
             margin-bottom: 10px;
         }
 
-        /* Add to Cart Button */
         .add-to-cart-btn {
             margin-top: 15px;
             padding: 10px 20px;
@@ -354,22 +337,25 @@
             color: white;
         }
 
-        /* Cart Sidebar */
-        .cart-sidebar {
-            position: fixed;
-            top: 0;
-            right: -350px;
-            width: 350px;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            padding: 30px;
-            transition: right 0.3s ease;
-            color: var(--cream-yellow);
-            z-index: 100;
-            overflow-y: auto;
-        }
+     .cart-sidebar {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 350px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.04); /* softer transparency */
+    backdrop-filter: blur(20px);
+    border-left:1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: -10px 0 25px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding: 30px 25px;
+    transition: right 0.3s ease;
+    color: var(--cream-yellow);
+    z-index: 1000;
+    overflow-y: auto;
+    font-family: 'Exo 2', sans-serif;
+    border-radius: 20px 0 0 20px;
+}
 
         .cart-sidebar.open {
             right: 0;
@@ -380,17 +366,8 @@
             margin-bottom: 15px;
             color: var(--cream-yellow);
             font-family: 'Orbitron', monospace;
-        }
+            text-shadow: 0 0 10px var(--peach-orange);
 
-        .cart-sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .cart-sidebar li {
-            margin-bottom: 10px;
-            font-size: 1.1em;
         }
 
         .cart-total {
@@ -539,20 +516,15 @@
         <div class="particle" style="left: 80%; animation-delay: 1.5s;"></div>
         <div class="particle" style="left: 90%; animation-delay: 2.5s;"></div>
     </div>
-<div class="container">
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="logo">iSCREAM</div>
-
-        <ul class="nav-links">
-            <li><a href="#" id="cart-icon" class="logout-btn">Cart (0)</a></li>
-        </ul>
-
-        <div class="header-actions">
-            <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
-        </div>
-    </nav>
-</div>
+    <div class="container">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="logo">iSCREAM</div>
+            <div class="nav-actions">
+                <button class="btn btn-primary" id="cart-toggle-btn">Cart</button>
+                <a class="btn btn-primary" href="{% url 'logout' %}">Logout</a>
+            </div>
+        </nav>
 
         <div class="dashboard-header">
             <h1 class="dashboard-title">CUSTOMER HUB</h1>
@@ -562,55 +534,64 @@
             <h2>Welcome, Ice Cream Lover</h2>
             <p>Discover our premium artisanal ice cream collection</p>
         </div>
-
+        
         <div class="customer-section">
-       {% if accepted_proposals %}
-                    <div class="customer-section">
+            {% if accepted_proposals %}
+            <div class="customer-section">
                 <h2 class="section-title">New Approved Flavors</h2>
                 <div class="vendor-section">
                     <div class="product-grid">
                         {% for proposal in accepted_proposals %}
-                            <div class="product-card">
-                                <h3>{{ proposal.name }}</h3>
-                                <p>{{ proposal.description }}</p>
-                                <p class="price">${{ proposal.price }}</p>
-                                <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
-                                    Sold by: {{ proposal.vendor.username }}
-                                </p>
-                                {% if proposal.image %}
-                                    <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
-                                {% endif %}
-                                <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
-                                    Add to Cart
-                                </button>
-                            </div>
+                        <div class="product-card">
+                            <h3>{{ proposal.name }}</h3>
+                            <p>{{ proposal.description }}</p>
+                            <p class="price">${{ proposal.price }}</p>
+                            <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                                Sold by: {{ proposal.vendor.username }}
+                            </p>
+                            {% if proposal.image %}
+                            <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
+                            {% endif %}
+                            <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
+                                Add to Cart
+                            </button>
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
             </div>
-        {% endif %}
-    </div>
-
-   
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const cartIcon = document.getElementById('cart-icon');
+            {% endif %}
+        </div>
+        <div id="cart-sidebar" class="cart-sidebar">
+            <h3>Your Cart</h3>
+            <ul id="cart-items"></ul>
+            <div class="cart-total" id="cart-total">Total: $0.00</div>
+            <form action="{% url 'buy_ice_cream' %}" method="post">
+                        {% csrf_token %}
+            <button onclick="checkout()">Checkout</button>
+            </form>
+        </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('cart-toggle-btn');
     const cartSidebar = document.getElementById('cart-sidebar');
 
-    if (cartIcon && cartSidebar) {
-      cartIcon.addEventListener('click', function (e) {
-        e.preventDefault();
-        cartSidebar.classList.toggle('open');
-      });
+    if (toggleBtn && cartSidebar) {
+        toggleBtn.addEventListener('click', function () {
+            cartSidebar.classList.toggle('open');
+        });
 
-      // Close cart when clicking outside
-      document.addEventListener('click', function (e) {
-        if (!cartSidebar.contains(e.target) && !e.target.closest('#cart-icon')) {
-          cartSidebar.classList.remove('open');
-        }
-      });
+        document.addEventListener('click', function (e) {
+            if (!cartSidebar.contains(e.target) && !e.target.closest('#cart-toggle-btn')) {
+                cartSidebar.classList.remove('open');
+            }
+        });
     }
-  });
+});  
+function checkout() {
+   alert("Checkout logic not implemented yet.");
+ }
+  
 </script>
 
 </body>

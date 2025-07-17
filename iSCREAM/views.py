@@ -15,9 +15,8 @@ from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSeria
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
-from django.urls import reverse
-from django.contrib.admin.views.decorators import staff_member_required
+
+
 
 
 class RegisterView(generics.CreateAPIView):
@@ -125,8 +124,11 @@ def login_page(request):
     return render(request, 'login.html')
 
 
-def approve_proposal(request, proposal_id):
+def logout_view(request):
+    logout(request)
+    return redirect('/login/')
 
+def approve_proposal(request, proposal_id):
     proposal = get_object_or_404(FlavorProposal, id=proposal_id)
     
     vendor = get_object_or_404(Vendor, user=proposal.vendor)
@@ -142,7 +144,7 @@ def approve_proposal(request, proposal_id):
     
       proposal.status = 'approved'
       proposal.save()
-    # Update proposal status to accepted
+      
     proposal.status = 'approved'
     proposal.save()
     
@@ -292,77 +294,58 @@ def add_to_cart(request, product_id):
     return redirect('customer_dashboard')
 
 @login_required
-def view_cart(request):
+def update_cart_quantity(request, product_id, action):
     cart = request.session.get('cart', {})
-    items = []
-    total = 0
+    product_id = str(product_id)
 
-    for product_id, quantity in cart.items():
-        product = get_object_or_404(IceCream, id=product_id)
-        subtotal = product.price * quantity
-        total += subtotal
-        items.append({'product': product, 'quantity': quantity, 'subtotal': subtotal})
-
-    return render(request, 'cart.html', {'items': items, 'total': total})
-
+    if product_id in cart:
+        if action == 'increase':
+            cart[product_id] += 1
+        elif action == 'decrease':
+            cart[product_id] -= 1
+            if cart[product_id] <= 0:
+                del cart[product_id]
+    
+    request.session['cart'] = cart
+    return redirect('view_cart')
 
 @login_required
 def buy_ice_cream(request):
     if request.method == 'POST':
-        ice_cream_id = request.POST.get('ice_cream_id')
-        quantity = int(request.POST.get('quantity', 1))
+        cart = request.session.get('cart', {})
 
-        ice_cream = get_object_or_404(IceCream, id=ice_cream_id)
-
-        if ice_cream.stock < quantity:
-            messages.error(request, f"Not enough stock available for {ice_cream.name}. Only {ice_cream.stock} left.")
+        if not cart:
+            messages.error(request, "Your cart is empty.")
             return redirect('/customer/')
-        # Reduce stock
-        ice_cream.stock -= quantity
-        ice_cream.save()
 
-        # Record the sale
-        Sale.objects.create(
-            product=ice_cream,
-            customer=request.user,
-            quantity_sold=quantity,
-            date_sold=timezone.now().date()
-        )
-        messages.success(request, f"Successfully purchased {quantity} of {ice_cream.name}!")
+        for product_id, quantity in cart.items():
+           product = get_object_or_404(IceCream, id=product_id)
+
+           if product.stock < quantity:
+              messages.error(request, f"Not enough stock for {product.name}. Only {product.stock} available.")
+              return redirect('view_cart')
+
+    # Deduct stock and record sales
+        for product_id, quantity in cart.items():
+           product = get_object_or_404(IceCream, id=product_id)
+           product.stock -= quantity
+           product.save()
+
+           Sale.objects.create(
+              product=product,
+              customer=request.user,
+              quantity_sold=quantity,
+              date_sold=timezone.now().date()
+            )
+
+    # Clear cart
+        request.session['cart'] = {}
+        request.session.modified = True
+
+        messages.success(request, "Purchase successful!")
         return redirect('/customer/')
-        
-    messages.error(request, "Invalid request method.")
     return redirect('/customer/')
-
-@login_required
-def checkout(request):
-    cart = request.session.get('cart', {})
-    if not cart:
-        return redirect('view_cart')
-
-    for product_id, quantity in cart.items():
-        product = get_object_or_404(IceCream, id=product_id)
-
-        if product.stock < quantity:
-            return render(request, 'cart.html', {
-                'items': [],
-                'total': 0,
-                'error': f"Not enough stock for {product.name}."
-            })
-
-        product.stock -= quantity
-        product.save()
-
-        Sale.objects.create(
-            product=product,
-            quantity_sold=quantity,
-            customer=request.user,
-            date_sold=timezone.now().date()
-        )
-
-    request.session['cart'] = {}
-    return render(request, 'checkout_success.html')
-
+    
 @login_required
 def add_flavour(request):
     vendor = get_object_or_404(Vendor, user=request.user)
@@ -408,4 +391,5 @@ def submit_flavour_proposal(request):
         return redirect('/vendor/')
     
     return redirect('/vendor/')
+    
 
