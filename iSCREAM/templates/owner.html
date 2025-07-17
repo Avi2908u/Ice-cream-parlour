@@ -640,134 +640,56 @@
 </div>
 {% endfor %}
  
-        <!-- Vendor Registration Management -->
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h2 class="section-title">Vendor Registration Requests</h2>
-            </div>
-            
-            <div class="table-container">
-                <div class="table-header">
-                    Pending Vendor Applications
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Applicant Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Applied Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Emma Wilson</td>
-                            <td>emma.wilson@email.com</td>
-                            <td>+1 (555) 123-4567</td>
-                            <td>Jul 14, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>David Chen</td>
-                            <td>david.chen@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 15, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Lisa Rodriguez</td>
-                            <td>lisa.rodriguez@email.com</td>
-                            <td>+1 (555) 345-6789</td>
-                            <td>Jul 16, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <!-- Vendor Registration Management -->
-        <div class="dashboard-section">
-            <div class="section-header">
-                <h2 class="section-title">New Flavor Proposals</h2>
-            </div>
-            
-            <div class="table-container">
-                <div class="table-header">
-                    Pending Flavor Applications
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Vendor Name</th>
-                            <th>Flavor</th>
-                            <th>Price</th>
-                            <th>Ingredients</th>
-                            <th>Applied Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Emma Wilson</td>
-                            <td>emma.wilson@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 14, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A001')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A001')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>David Chen</td>
-                            <td>david.chen@email.com</td>
-                            <td>+1 (555) 234-5678</td>
-                            <td>Jul 15, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A002')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A002')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Lisa Rodriguez</td>
-                            <td>lisa.rodriguez@email.com</td>
-                            <td>+1 (555) 345-6789</td>
-                            <td>Jul 16, 2024</td>
-                            <td><span class="status-badge status-pending">Pending</span></td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action btn-accept" onclick="approveVendor('A003')">Accept</button>
-                                    <button class="btn-action btn-reject" onclick="rejectVendor('A003')">Reject</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </div>
-            </body>
-            </html>
+       
+        <div class="dashboard-section">             
+    <div class="section-header">                 
+        <h2 class="section-title">New Flavor Proposals</h2>             
+    </div>                          
+    <div class="table-container">                 
+        <div class="table-header">                     
+            Pending Flavor Applications                 
+        </div>                 
+        <table>                     
+            <thead>                         
+                <tr>                             
+                    <th>Vendor Name</th>                             
+                    <th>Flavor</th>                             
+                    <th>Price</th>                             
+                    <th>Description</th>                             
+                    <th>Applied Date</th>                             
+                    <th>Actions</th>                         
+                </tr>                     
+            </thead>                     
+            <tbody>
+                {% for proposal in pending_proposals %}
+                <tr>                             
+                    <td>{{ proposal.vendor.first_name }}</td>                             
+                    <td>{{ proposal.name }}</td>                             
+                    <td>${{ proposal.price }}</td>                             
+                    <td>{{ proposal.description }}</td>                             
+                    <td>{{ proposal.created_at|date:"M d, Y" }}</td>                             
+                    <td>                                 
+                        <div class="action-buttons">                                     
+                            <form method="post" action="{% url 'approve_proposal' proposal.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-accept">Accept</button>
+                            </form>
+                            <form method="post" action="{% url 'reject_proposal' proposal.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-action btn-reject">Reject</button>
+                            </form>
+                        </div>                             
+                    </td>                         
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 20px;">No pending proposals</td>
+                </tr>
+                {% endfor %}
+                </tbody>                 
+            </table>
+        </div>             
+    </div>
+</body>
+</html>
     

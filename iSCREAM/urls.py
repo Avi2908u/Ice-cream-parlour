@@ -19,5 +19,9 @@ urlpatterns = [
     path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('users/', UserListView.as_view(), name='user-list'), 
     path('summary/', SummaryView.as_view(), name='summary'),
-    path('submit_flavour_proposal/',views.submit_flavour_proposal,name='submit_flavour_proposal')
+    path('submit_flavour_proposal/',views.submit_flavour_proposal,name='submit_flavour_proposal'),
+
+    path('approve-proposal/<int:proposal_id>/', views.approve_proposal, name='approve_proposal'),
+    path('reject-proposal/<int:proposal_id>/', views.reject_proposal, name='reject_proposal'),
+    
 ]

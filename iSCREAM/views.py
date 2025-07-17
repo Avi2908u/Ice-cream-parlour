@@ -126,7 +126,53 @@ def login_page(request):
     return render(request, 'login.html')
 
 @login_required
+def approve_proposal(request, proposal_id):
+    if request.user.role != 'owner':
+        messages.error(request, "Not authorized to approve proposals")
+        return redirect('owner')
+    
+    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
+    
+    vendor = get_object_or_404(Vendor, user=proposal.vendor)
+    
+    # Create an IceCream object from the approved proposal
+    ice_cream = IceCream.objects.create(
+        vendor=vendor,
+        flavour=proposal.name,
+        price=proposal.price,
+        description=proposal.description,
+        stock=0,  
+        image=proposal.image if proposal.image else None
+    )
+    
+    # Update proposal status to accepted
+    proposal.status = 'accepted'
+    proposal.save()
+    
+    messages.success(request, f"Proposal '{proposal.name}' has been approved and added to the catalog!")
+    return redirect('owner')
+
+
+@login_required
+def reject_proposal(request, proposal_id):
+    # Check if user is owner
+    if request.user.role != 'owner':
+        messages.error(request, "Not authorized to reject proposals")
+        return redirect('owner')
+    
+    proposal = get_object_or_404(FlavorProposal, id=proposal_id)
+    
+    # Delete the proposal from database
+    proposal_name = proposal.name
+    proposal.delete()
+    
+    messages.success(request, f"Proposal '{proposal_name}' has been rejected and removed!")
+    return redirect('owner')
+
+@login_required
 def owner_dashboard(request):
+    
+    
     today = date.today()
     vendors = Vendor.objects.prefetch_related('icecreams').all()
     proposals = FlavorProposal.objects.filter(status='pending')
@@ -170,7 +216,7 @@ def owner_dashboard(request):
         'total_revenue': total_revenue,
         'total_items_sold': total_items_sold,
         'total_stock_items': total_stock_items,
-        'pending_proposals': proposals,  # Moved here
+        'pending_proposals': proposals,
     }
 
     return render(request, "owner.html", context)
