@@ -550,6 +550,7 @@
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
+                <button class="btn btn-secondary" onclick="toggleCart()">Cart</button>
                 <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
             </script>
         </nav>
@@ -593,12 +594,53 @@
     </div>
 
     <!-- Cart Sidebar -->
-    <div id="cart-sidebar" class="cart-sidebar">
-        <h3>Your Cart</h3>
-        <ul id="cart-items"></ul>
-        <div class="cart-total">Total: $0.00</div>
-        <button>Checkout</button>
-        <button>Close</button>
-    </div>
+   <div id="cart-sidebar" class="cart-sidebar">
+    <h3>Your Cart</h3>
+    <ul id="cart-items"></ul>
+    <div class="cart-total">Total: $0.00</div>
+    <button>Checkout</button>
+    <button onclick="toggleCart()">Close</button>
+</div>
+
+    <script>
+    const cartItems = [];
+    const cartList = document.getElementById('cart-items');
+    const cartTotal = document.querySelector('.cart-total');
+
+    // Toggle Cart Sidebar
+    function toggleCart() {
+        const sidebar = document.getElementById('cart-sidebar');
+        sidebar.classList.toggle('open');
+        updateCartDisplay();
+    }
+
+    // Add item to cart
+    function addToCart(name, price) {
+        const existingItem = cartItems.find(item => item.name === name);
+        if (existingItem) {
+            existingItem.quantity += 1;
+        } else {
+            cartItems.push({ name, price, quantity: 1 });
+        }
+        updateCartDisplay();
+    }
+
+    // Update Cart UI
+    function updateCartDisplay() {
+        cartList.innerHTML = '';
+        let total = 0;
+
+        cartItems.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`;
+            cartList.appendChild(li);
+            total += item.price * item.quantity;
+        });
+
+        cartTotal.textContent = `Total: $${total.toFixed(2)}`;
+    }
+</script>
+
+
 </body>
 </html>

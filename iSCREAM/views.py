@@ -381,7 +381,6 @@ def add_flavour(request):
 
 def submit_flavour_proposal(request):
     if request.method == 'POST':
-        print("svbsdvbs")
         vendor= request.user
         name = request.POST.get('flavor_name')
         description = request.POST.get('description')
