@@ -256,6 +256,7 @@
             overflow: hidden;
             transition: all 0.3s ease;
             border: 1px solid var(--glass-border);
+            padding: 25px;
         }
 
         .product-card:hover {
@@ -297,7 +298,24 @@
             text-transform: uppercase;
         }
 
+        .product-card h3 {
+            margin-bottom: 12px;
+            color: var(--cream-yellow);
+            font-weight: 600;
+            font-size: 1.3em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
         .product-price {
+            font-size: 1.4em;
+            color: var(--mint-green);
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .price {
             font-size: 1.4em;
             color: var(--mint-green);
             font-weight: 700;
@@ -309,6 +327,13 @@
             color: rgba(255, 255, 255, 0.8);
             line-height: 1.6;
             font-weight: 300;
+        }
+
+        .product-card p {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            font-weight: 300;
+            margin-bottom: 10px;
         }
 
         /* Add to Cart Button */
@@ -414,6 +439,70 @@
             color: var(--peach-orange);
         }
 
+        .messages {
+            list-style: none;
+            padding: 10px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .messages li {
+            margin-bottom: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .messages li.success {
+            background-color: #c2f2d0;
+            color: #2e7d32;
+        }
+
+        .messages li.error {
+            background-color: #ffc5d9;
+            color: #b71c1c;
+        }
+
+        .vendor-section {
+            margin-bottom: 40px;
+        }
+
+        .vendor-section h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8em;
+            color: var(--cream-yellow);
+            margin-bottom: 25px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px var(--peach-orange);
+        }
+
+        .vendor-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .vendor-section li {
+            color: var(--mint-green);
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .proposal-badge {
+            background: var(--peach-orange);
+            color: var(--primary-brown);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -435,44 +524,10 @@
                 width: 100vw;
                 padding: 18px;
             }
-              .messages {
-      list-style: none;
-      padding: 10px;
-  }
-  .messages li {
-      margin-bottom: 10px;
-      padding: 10px 20px;
-      border-radius: 8px;
-      font-weight: 600;
-  }
-  .messages li.success {
-      background-color: #c2f2d0;
-      color: #2e7d32;
-  }
-  .messages li.error {
-      background-color: #ffc5d9;
-      color: #b71c1c;
-  }
         }
     </style>
 </head>
 <body>
-    {% if messages %}
-      <ul class="messages">
-       {% for message in messages %}
-         <li class="{{ message.tags }}">{{ message }}</li>
-       {% endfor %}
-      </ul>
-    {% endif %}
-    {% for vendor in vendors %}
-  <h2>{{ vendor.shop_name }}</h2>
-  <ul>
-    {% for icecream in vendor.icecreams.all %}
-      <li>{{ icecream.flavour }} - ₹{{ icecream.price }} (Stock: {{ icecream.stock }})</li>
-    {% endfor %}
-  </ul>
-{% endfor %}
-
     <div class="floating-particles">
         <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
         <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
@@ -485,15 +540,34 @@
         <div class="particle" style="left: 90%; animation-delay: 2.5s;"></div>
     </div>
 
+    <!-- Messages (if any) -->
+    <!-- {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %} -->
 
-    
+    <!-- Vendor List (outside container for demo) -->
+    <!-- {% for vendor in vendors %}
+        <div class="vendor-section">
+            <h2>{{ vendor.shop_name }}</h2>
+            <ul>
+                {% for icecream in vendor.icecreams.all %}
+                    <li>{{ icecream.flavour }} - ₹{{ icecream.price }} (Stock: {{ icecream.stock }})</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endfor %} -->
+
     <div class="container">
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
             <ul class="nav-links">
-                <li><a href="#" id="cart-icon" onclick="openCart()">Cart (0)</a></li>
-                <li><button class="logout-btn" onclick="window.location.href='/login/'">Logout</button></li>
+                <li><a href="#" id="cart-icon">Cart (0)</a></li>
+                <li><button class="logout-btn">Logout</button></li>
             </ul>
         </nav>
 
@@ -507,119 +581,41 @@
         </div>
 
         <div class="customer-section">
-            <h2 class="section-title">Available Flavors</h2>
-            <div class="product-grid" id="product-grid">
-                <!-- Product cards will be generated here -->
+       {% if accepted_proposals %}
+                    <div class="customer-section">
+                <h2 class="section-title">New Approved Flavors</h2>
+                <div class="vendor-section">
+                    <h2>Recently Approved Proposals <span class="proposal-badge">NEW</span></h2>
+                    <div class="product-grid">
+                        {% for proposal in accepted_proposals %}
+                            <div class="product-card">
+                                <h3>{{ proposal.name }}</h3>
+                                <p>{{ proposal.description }}</p>
+                                <p class="price">₹{{ proposal.price }}</p>
+                                <p style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                                    Proposed by: {{ proposal.vendor.username }}
+                                </p>
+                                {% if proposal.image %}
+                                    <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
+                                {% endif %}
+                                <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
+                                    Add to Cart
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-        </div>
+        {% endif %}
     </div>
 
     <!-- Cart Sidebar -->
     <div id="cart-sidebar" class="cart-sidebar">
         <h3>Your Cart</h3>
         <ul id="cart-items"></ul>
-        <div class="cart-total">Total: $0.00</div>
-        <button onclick="checkout()">Checkout</button>
-        <button onclick="closeCart()">Close</button>
+        <div class="cart-total">Total: ₹0.00</div>
+        <button>Checkout</button>
+        <button>Close</button>
     </div>
-
-    <!-- Footer -->
-   
-    <script>
-        // Product Data
-        const products = [
-            {
-                name: "Vanilla Ice Cream",
-                price: 3.50,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f366.svg",
-                desc: "Classic vanilla flavor made with real Madagascar vanilla beans"
-            },
-            {
-                name: "Chocolate Ice Cream",
-                price: 4.00,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36b.svg",
-                desc: "Rich dark chocolate ice cream with cocoa from Belgium"
-            },
-            {
-                name: "Strawberry Ice Cream",
-                price: 3.75,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f353.svg",
-                desc: "Fresh strawberry ice cream with real fruit chunks"
-            },
-            {
-                name: "Mint Chocolate Chip",
-                price: 4.25,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f33f.svg",
-                desc: "Refreshing mint with premium chocolate chips"
-            },
-            {
-                name: "Rocky Road",
-                price: 4.50,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1faa8.svg",
-                desc: "Chocolate ice cream with marshmallows and nuts"
-            },
-            {
-                name: "Pistachio",
-                price: 4.75,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f95c.svg",
-                desc: "Creamy pistachio ice cream with real nuts"
-            },
-            {
-                name: "Cookies and Cream",
-                price: 4.25,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36a.svg",
-                desc: "Vanilla ice cream with crushed chocolate cookies"
-            },
-            {
-                name: "Caramel Swirl",
-                price: 4.50,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f36f.svg",
-                desc: "Creamy vanilla with rich caramel swirl throughout"
-            },
-            {
-                name: "Mango Sorbet",
-                price: 4.00,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f96d.svg",
-                desc: "Refreshing dairy-free mango sorbet with tropical flavor"
-            },
-            {
-                name: "Salted Caramel",
-                price: 4.75,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f9c2.svg",
-                desc: "Sweet and salty caramel ice cream with sea salt crystals"
-            },
-            {
-                name: "Neapolitan",
-                price: 4.00,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f366.svg",
-                desc: "Classic trio of vanilla, chocolate, and strawberry"
-            },
-            {
-                name: "Butter Pecan",
-                price: 4.50,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f330.svg",
-                desc: "Rich buttery ice cream with toasted pecan pieces"
-            },
-            {
-                name: "Coffee Gelato",
-                price: 4.25,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/2615.svg",
-                desc: "Authentic Italian-style coffee gelato with espresso"
-            },
-            {
-                name: "Coconut",
-                price: 4.00,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f965.svg",
-                desc: "Tropical coconut ice cream with shredded coconut flakes"
-            },
-            {
-                name: "Blueberry Cheesecake",
-                price: 4.75,
-                img: "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1fad0.svg",
-                desc: "Creamy cheesecake ice cream with blueberry swirl and graham cracker pieces"
-            }
-        ];
-
-        </script>
 </body>
 </html>

@@ -94,7 +94,7 @@ def signup_page(request):
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
         user.set_password(password)
         user.save()
-        return redirect('/login/')  
+        return redirect('login')  
     return render(request, 'signup.html')
 
 @csrf_protect
@@ -125,7 +125,7 @@ def login_page(request):
 
     return render(request, 'login.html')
 
-@login_required
+
 def approve_proposal(request, proposal_id):
 
     proposal = get_object_or_404(FlavorProposal, id=proposal_id)
@@ -143,12 +143,14 @@ def approve_proposal(request, proposal_id):
     
       proposal.status = 'approved'
       proposal.save()
+    # Update proposal status to accepted
+    proposal.status = 'approved'
+    proposal.save()
     
     messages.success(request, f"Proposal '{proposal.name}' has been approved and added to the catalog!")
     return redirect('/owner/')
 
 
-@login_required
 def reject_proposal(request, proposal_id):
     if request.user.role != 'owner':
         messages.error(request, "Not authorized to reject proposals")
@@ -165,8 +167,6 @@ def reject_proposal(request, proposal_id):
 
 @login_required
 def owner_dashboard(request):
-    
-    
     today = date.today()
     vendors = Vendor.objects.prefetch_related('icecreams').all()
     proposals = FlavorProposal.objects.filter(status='pending')
@@ -265,8 +265,12 @@ def vendor_dashboard(request):
 @login_required
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
-    return render(request, 'customer_dashboard.html',{'venders':vendors})
-
+    accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
+    
+    return render(request, 'customer_dashboard.html', {
+        'vendors': vendors,  
+        'accepted_proposals': accepted_proposals
+    })
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(IceCream, id=product_id)
