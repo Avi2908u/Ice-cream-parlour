@@ -544,10 +544,11 @@
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
             <ul class="nav-links">
-                <li><button class="logout-btn" href="#" id="cart-icon">Cart (0)</button></li>
-                <li><button class="logout-btn" onclick="window.location.href='/login/'">Logout</button></li>
-            </ul>
-        </nav>
+  <li><a href="#" id="cart-icon" class="logout-btn">Cart (0)</a></li>
+<li><a href="{% url 'logout' %}" class="logout-btn">Logout</a></li>
+</ul>
+
+     </nav>
 
         <div class="dashboard-header">
             <h1 class="dashboard-title">CUSTOMER HUB</h1>
@@ -576,7 +577,7 @@
                                     <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
                                 {% endif %}
                                 <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
-                                    Add to Cart
+                                    Add to Cart es
                                 </button>
                             </div>
                         {% endfor %}
@@ -594,5 +595,26 @@
         <button>Checkout</button>
         <button>Close</button>
     </div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const cartIcon = document.getElementById('cart-icon');
+    const cartSidebar = document.getElementById('cart-sidebar');
+
+    if (cartIcon && cartSidebar) {
+      cartIcon.addEventListener('click', function (e) {
+        e.preventDefault();
+        cartSidebar.classList.toggle('open');
+      });
+
+      // Close cart when clicking outside
+      document.addEventListener('click', function (e) {
+        if (!cartSidebar.contains(e.target) && !e.target.closest('#cart-icon')) {
+          cartSidebar.classList.remove('open');
+        }
+      });
+    }
+  });
+</script>
+
 </body>
 </html>

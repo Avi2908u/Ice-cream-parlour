@@ -5,7 +5,7 @@ from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
 from .forms import IceCreamForm
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
-from django.contrib.auth import authenticate, login, get_user_model
+from django.contrib.auth import authenticate, login, get_user_model, logout
 from rest_framework import generics ,viewsets, permissions
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -92,7 +92,6 @@ def signup_page(request):
        
         if role == 'vendor':
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
-        user.set_password(password)
         user.save()
         return redirect('login')  
     return render(request, 'signup.html')
@@ -272,6 +271,9 @@ def customer_dashboard(request):
         'accepted_proposals': accepted_proposals
     })
 
+def logout_view(request):
+    logout(request)
+    return redirect('/login/') 
 
 @login_required
 def add_to_cart(request, product_id):
