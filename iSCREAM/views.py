@@ -94,7 +94,7 @@ def signup_page(request):
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
         user.set_password(password)
         user.save()
-        return redirect('/login/')  
+        return redirect('login')  
     return render(request, 'signup.html')
 
 @csrf_protect
@@ -146,7 +146,7 @@ def approve_proposal(request, proposal_id):
     )
     
     # Update proposal status to accepted
-    proposal.status = 'accepted'
+    proposal.status = 'approved'
     proposal.save()
     
     messages.success(request, f"Proposal '{proposal.name}' has been approved and added to the catalog!")
@@ -257,8 +257,12 @@ def vendor_dashboard(request):
 @login_required
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
-    return render(request, 'customer_dashboard.html',{'venders':vendors})
-
+    accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
+    
+    return render(request, 'customer_dashboard.html', {
+        'vendors': vendors,  
+        'accepted_proposals': accepted_proposals
+    })
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(IceCream, id=product_id)

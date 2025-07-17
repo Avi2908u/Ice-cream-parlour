@@ -18,43 +18,29 @@ class Vendor(models.Model):
 
     def __str__(self):
         return self.shop_name
-
+    
 class IceCream(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name="icecreams")
     flavour = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=6, decimal_places=2)
-    stock = models.PositiveIntegerField(default=0)
-
-    def __str__(self):
-        return f"{self.flavour} - {self.vendor.shop_name}"  # Fixed: was using self.name which doesn't exist
-
-class FlavorProposal(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('declined', 'Declined'),
-    ]
-
-    vendor = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)  # This should be the flavor name
-    price = models.DecimalField(max_digits=6, decimal_places=2)
-    description = models.TextField()
-    image = models.ImageField(upload_to='proposed_flavors/', null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    stock = models.PositiveIntegerField(default=0) 
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} - {self.status}"  
+        return f"{self.name} ({self.flavour})"
 
 class CartItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey('IceCream', on_delete=models.CASCADE)
+    product = models.ForeignKey('IceCream', on_delete=models.CASCADE)  # Fix here
     quantity = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return f"{self.product.flavour} ({self.quantity})"  
-    
+        return f"{self.product.name} ({self.quantity})"
+
+
 class Sale(models.Model):
+
     product = models.ForeignKey(IceCream, on_delete=models.CASCADE)
     quantity_sold = models.PositiveIntegerField()
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vendor_sales', null=True, blank=True)
@@ -70,3 +56,7 @@ class Sale(models.Model):
 
     def revenue(self):
         return self.quantity_sold * self.product.price
+
+
+
+
