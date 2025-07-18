@@ -16,7 +16,7 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
 
-
+from django.http import JsonResponse
 
 
 class RegisterView(generics.CreateAPIView):
@@ -268,28 +268,161 @@ def vendor_dashboard(request):
     }
     return render(request, 'vendor.html', context)
 
+
+@login_required
+def get_cart_count(request):
+    cart = request.session.get('cart', {})
+    total_items = sum(cart.values())
+    return JsonResponse({'count': total_items})
+
 @login_required
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
     accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
     
+    # Get cart items for display
+    cart = request.session.get('cart', {})
+    cart_items = []
+    total = 0
+    
+    for product_id, quantity in cart.items():
+        if product_id.startswith('proposal_'):
+            # Handle proposal items
+            proposal_id = product_id.replace('proposal_', '')
+            try:
+                proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
+                subtotal = float(proposal.price) * quantity
+                total += subtotal
+                cart_items.append({
+                    'product': proposal,
+                    'quantity': quantity,
+                    'subtotal': subtotal,
+                    'product_id': product_id,
+                    'is_proposal': True
+                })
+            except FlavorProposal.DoesNotExist:
+                continue
+        else:
+            # Handle regular ice cream products
+            try:
+                product = IceCream.objects.get(id=product_id)
+                subtotal = float(product.price) * quantity
+                total += subtotal
+                cart_items.append({
+                    'product': product,
+                    'quantity': quantity,
+                    'subtotal': subtotal,
+                    'product_id': product_id,
+                    'is_proposal': False
+                })
+            except IceCream.DoesNotExist:
+                continue
+    
     return render(request, 'customer_dashboard.html', {
         'vendors': vendors,  
-        'accepted_proposals': accepted_proposals
+        'accepted_proposals': accepted_proposals,
+        'cart_items': cart_items,
+        'cart_total': total
     })
 
 
 @login_required
 def add_to_cart(request, product_id):
-    product = get_object_or_404(IceCream, id=product_id)
-    cart = request.session.get('cart',{})
-    if str(product_id) in cart:
-        cart[str(product_id)] += 1
-    else:
-        cart[str(product_id)] = 1
+    if request.method == 'POST':
+        product = get_object_or_404(IceCream, id=product_id)
+        cart = request.session.get('cart', {})
+        
+        if str(product_id) in cart:
+            cart[str(product_id)] += 1
+        else:
+            cart[str(product_id)] = 1
 
-    request.session['cart'] = cart
-    return redirect('customer_dashboard')
+        request.session['cart'] = cart
+        messages.success(request, f"Added {product.name} to cart!")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Added {product.name} to cart!',
+            'cart_count': sum(cart.values())
+        })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
+
+
+@login_required
+def add_proposal_to_cart(request, proposal_id):
+    if request.method == 'POST':
+        proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
+        
+        # Create a temporary IceCream object or handle proposals separately
+        # For now, let's assume proposals are converted to IceCream objects when approved
+        # You might need to modify this based on your actual data structure
+        
+        cart = request.session.get('cart', {})
+        cart_key = f"proposal_{proposal_id}"
+        
+        if cart_key in cart:
+            cart[cart_key] += 1
+        else:
+            cart[cart_key] = 1
+
+        request.session['cart'] = cart
+        messages.success(request, f"Added {proposal.name} to cart!")
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Added {proposal.name} to cart!',
+            'cart_count': sum(cart.values())
+        })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
+
+
+@login_required
+def update_cart_quantity(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        action = request.POST.get('action')  # 'increase' or 'decrease'
+        
+        cart = request.session.get('cart', {})
+        
+        if product_id in cart:
+            if action == 'increase':
+                cart[product_id] += 1
+            elif action == 'decrease':
+                cart[product_id] -= 1
+                if cart[product_id] <= 0:
+                    del cart[product_id]
+        
+        request.session['cart'] = cart
+        
+        return JsonResponse({
+            'success': True,
+            'new_quantity': cart.get(product_id, 0),
+            'cart_count': sum(cart.values())
+        })
+    
+    return JsonResponse({'success': False})
+
+
+@login_required
+def remove_from_cart(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        cart = request.session.get('cart', {})
+        
+        if product_id in cart:
+            del cart[product_id]
+            request.session['cart'] = cart
+            messages.success(request, "Item removed from cart!")
+        
+        return JsonResponse({
+            'success': True,
+            'cart_count': sum(cart.values())
+        })
+    
+    return JsonResponse({'success': False})
+
 
 @login_required
 def view_cart(request):
@@ -298,42 +431,42 @@ def view_cart(request):
     total = 0
 
     for product_id, quantity in cart.items():
-        product = get_object_or_404(IceCream, id=product_id)
-        subtotal = product.price * quantity
-        total += subtotal
-        items.append({'product': product, 'quantity': quantity, 'subtotal': subtotal})
+        if product_id.startswith('proposal_'):
+            # Handle proposal items
+            proposal_id = product_id.replace('proposal_', '')
+            try:
+                proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
+                subtotal = proposal.price * quantity
+                total += subtotal
+                items.append({
+                    'product': proposal,
+                    'quantity': quantity,
+                    'subtotal': subtotal,
+                    'product_id': product_id,
+                    'is_proposal': True
+                })
+            except FlavorProposal.DoesNotExist:
+                continue
+        else:
+            # Handle regular products
+            try:
+                product = IceCream.objects.get(id=product_id)
+                subtotal = product.price * quantity
+                total += subtotal
+                items.append({
+                    'product': product,
+                    'quantity': quantity,
+                    'subtotal': subtotal,
+                    'product_id': product_id,
+                    'is_proposal': False
+                })
+            except IceCream.DoesNotExist:
+                continue
 
     return render(request, 'cart.html', {'items': items, 'total': total})
 
 
-@login_required
-def buy_ice_cream(request):
-    if request.method == 'POST':
-        ice_cream_id = request.POST.get('ice_cream_id')
-        quantity = int(request.POST.get('quantity', 1))
-
-        ice_cream = get_object_or_404(IceCream, id=ice_cream_id)
-
-        if ice_cream.stock < quantity:
-            messages.error(request, f"Not enough stock available for {ice_cream.name}. Only {ice_cream.stock} left.")
-            return redirect('/customer/')
-        # Reduce stock
-        ice_cream.stock -= quantity
-        ice_cream.save()
-
-        # Record the sale
-        Sale.objects.create(
-            product=ice_cream,
-            customer=request.user,
-            quantity_sold=quantity,
-            date_sold=timezone.now().date()
-        )
-        messages.success(request, f"Successfully purchased {quantity} of {ice_cream.name}!")
-        return redirect('/customer/')
-        
-    messages.error(request, "Invalid request method.")
-    return redirect('/customer/')
-
+# Keep your existing checkout and other functions as they are
 @login_required
 def checkout(request):
     cart = request.session.get('cart', {})
@@ -341,28 +474,43 @@ def checkout(request):
         return redirect('view_cart')
 
     for product_id, quantity in cart.items():
-        product = get_object_or_404(IceCream, id=product_id)
+        if product_id.startswith('proposal_'):
+            # Handle proposal checkout - you may need to create IceCream objects
+            proposal_id = product_id.replace('proposal_', '')
+            proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
+            
+            # Create a sale record for the proposal
+            Sale.objects.create(
+                product=None,  # You might want to create an IceCream object first
+                quantity_sold=quantity,
+                customer=request.user,
+                date_sold=timezone.now().date()
+            )
+        else:
+            product = get_object_or_404(IceCream, id=product_id)
 
-        if product.stock < quantity:
-            return render(request, 'cart.html', {
-                'items': [],
-                'total': 0,
-                'error': f"Not enough stock for {product.name}."
-            })
+            if product.stock < quantity:
+                return render(request, 'cart.html', {
+                    'items': [],
+                    'total': 0,
+                    'error': f"Not enough stock for {product.name}."
+                })
 
-        product.stock -= quantity
-        product.save()
+            product.stock -= quantity
+            product.save()
 
-        Sale.objects.create(
-            product=product,
-            quantity_sold=quantity,
-            customer=request.user,
-            date_sold=timezone.now().date()
-        )
+            Sale.objects.create(
+                product=product,
+                quantity_sold=quantity,
+                customer=request.user,
+                date_sold=timezone.now().date()
+            )
 
     request.session['cart'] = {}
     return render(request, 'checkout_success.html')
 
+
+# Your existing functions remain the same
 @login_required
 def add_flavour(request):
     vendor = get_object_or_404(Vendor, user=request.user)
@@ -379,15 +527,15 @@ def add_flavour(request):
 
     return render(request, 'add_flavour.html', {'form': form})
 
+
 def submit_flavour_proposal(request):
     if request.method == 'POST':
-        vendor= request.user
+        vendor = request.user
         name = request.POST.get('flavor_name')
         description = request.POST.get('description')
         price = request.POST.get('base_price')
         image = request.FILES.get('image')  
         stock = request.POST.get('stock')  
-
 
         if not name or not description:
             messages.error(request, "Please fill out both fields.")
@@ -407,5 +555,3 @@ def submit_flavour_proposal(request):
         return redirect('/vendor/')
     
     return redirect('/vendor/')
-    
-
