@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
+from .models import IceCream, CartItem, Vendor, User, FlavorProposal,Cart, Sale, OrderItem, Order
 from .forms import IceCreamForm
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
@@ -15,7 +15,7 @@ from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSeria
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
-
+from django.db import transaction
 from django.http import JsonResponse
 
 
@@ -91,7 +91,6 @@ def signup_page(request):
        
         if role == 'vendor':
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
-        user.set_password(password)
         user.save()
         return redirect('login')  
     return render(request, 'signup.html')
@@ -278,277 +277,265 @@ def get_cart_count(request):
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
     accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
-    cart = request.session.get('cart', {})
-    cart_items = []
-    total = 0
     
-    for product_id, quantity in cart.items():
-        if product_id.startswith('proposal_'):
-            
-            proposal_id = product_id.replace('proposal_', '')
-            try:
-                proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
-                subtotal = float(proposal.price) * quantity
-                total += subtotal
-                cart_items.append({
-                    'product': proposal,
-                    'quantity': quantity,
-                    'subtotal': subtotal,
-                    'product_id': product_id,
-                    'is_proposal': True
-                })
-            except FlavorProposal.DoesNotExist:
-                continue
-        else:
-            # Handle regular ice cream products
-            try:
-                product = IceCream.objects.get(id=product_id)
-                subtotal = float(product.price) * quantity
-                total += subtotal
-                cart_items.append({
-                    'product': product,
-                    'quantity': quantity,
-                    'subtotal': subtotal,
-                    'product_id': product_id,
-                    'is_proposal': False
-                })
-            except IceCream.DoesNotExist:
-                continue
+    # Get cart items for display
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.cart_items.all()
+    cart_total = cart.get_total_price()
+        
+    context = {
+            'vendors': vendors,
+            'accepted_proposals': accepted_proposals,
+            'cart_items': cart_items,
+            'cart_total': cart_total,
+        }
+        
+    return render(request, 'customer_dashboard.html', context)
     
-    return render(request, 'customer_dashboard.html', {
-        'vendors': vendors,  
-        'accepted_proposals': accepted_proposals,
-        'cart_items': cart_items,
-        'cart_total': total
-    })
+def logout_view(request):
+    logout(request)
+    return redirect('/login/') 
 
+@login_required
 def add_to_cart(request, product_id):
-    if request.method == 'POST':
-        product = get_object_or_404(IceCream, id=product_id)
-        cart = request.session.get('cart', {})
-        
-        if str(product_id) in cart:
-            cart[str(product_id)] += 1
-        else:
-            cart[str(product_id)] = 1
+   if request.method == 'POST':
+        try:
+            icecream = get_object_or_404(IceCream, id=product_id)
+            
+            # Check stock
+            if icecream.stock <= 0:
+                messages.error(request, f"{icecream.flavour} is out of stock!")
+                return redirect('customer_dashboard')
+            
+            # Get or create cart
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product=icecream,
+                defaults={'quantity': 1}
+            )
+            
+            if not created:
+                # Check if we can add more
+                if cart_item.quantity >= icecream.stock:
+                    messages.error(request, f"Cannot add more {icecream.flavour}. Stock limit reached!")
+                    return redirect('customer_dashboard')
+                
+                cart_item.quantity += 1
+                cart_item.save()
+                messages.success(request, f"Added another {icecream.flavour} to cart!")
+            else:
+                messages.success(request, f"Added {icecream.flavour} to cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error adding to cart: {str(e)}")
+   return redirect('customer_dashboard')
 
-        request.session['cart'] = cart
-        messages.success(request, f"Added {product.name} to cart!")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Added {product.name} to cart!',
-            'cart_count': sum(cart.values())
-        })
-    
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
-
-
+@login_required
 def add_proposal_to_cart(request, proposal_id):
+    """Add approved proposal to cart"""
     if request.method == 'POST':
-        proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
-        
-        cart = request.session.get('cart', {})
-        cart_key = f"proposal_{proposal_id}"
-        
-        if cart_key in cart:
-            cart[cart_key] += 1
-        else:
-            cart[cart_key] = 1
-
-        request.session['cart'] = cart
-        messages.success(request, f"Added {proposal.name} to cart!")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Added {proposal.name} to cart!',
-            'cart_count': sum(cart.values())
-        })
+        try:
+            proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='accepted')
+            
+            # Check stock
+            if proposal.stock <= 0:
+                messages.error(request, f"{proposal.name} is out of stock!")
+                return redirect('customer_dashboard')
+            
+            # Get or create cart
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                proposal=proposal,
+                defaults={'quantity': 1}
+            )
+            
+            if not created:
+                # Check if we can add more
+                if cart_item.quantity >= proposal.stock:
+                    messages.error(request, f"Cannot add more {proposal.name}. Stock limit reached!")
+                    return redirect('customer_dashboard')
+                
+                cart_item.quantity += 1
+                cart_item.save()
+                messages.success(request, f"Added another {proposal.name} to cart!")
+            else:
+                messages.success(request, f"Added {proposal.name} to cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error adding to cart: {str(e)}")
     
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
+    return redirect('customer_dashboard')
 
 
+@login_required
+@require_POST
 def update_cart_quantity(request):
-    if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-        action = request.POST.get('action')  
-        
-        cart = request.session.get('cart', {})
-        
-        if product_id in cart:
-            if action == 'increase':
-                cart[product_id] += 1
-            elif action == 'decrease':
-                cart[product_id] -= 1
-                if cart[product_id] <= 0:
-                    del cart[product_id]
-        
-        request.session['cart'] = cart
-        
-        return JsonResponse({
-            'success': True,
-            'new_quantity': cart.get(product_id, 0),
-            'cart_count': sum(cart.values())
-        })
-    
-    return JsonResponse({'success': False})
+    """Update cart item quantity"""
+    product_id = request.POST.get('product_id')
+    action = request.POST.get('action')
+    cart = get_object_or_404(Cart, user=request.user)
 
+    cart_item = None
+    max_stock = 0
+    item_name = ''
+
+    try:
+        # Try to find cart item as a regular product
+        cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+        max_stock = cart_item.product.stock
+        item_name = cart_item.product.flavour
+    except CartItem.DoesNotExist:
+        try:
+            # Try as a proposal item
+            cart_item = CartItem.objects.get(cart=cart, proposal_id=product_id)
+            max_stock = cart_item.proposal.stock
+            item_name = cart_item.proposal.name
+        except CartItem.DoesNotExist:
+            messages.error(request, "Item not found in cart!")
+            return redirect('customer_dashboard')
+
+    if action == 'increase':
+        if cart_item.quantity < max_stock:
+            cart_item.quantity += 1
+            cart_item.save()
+            messages.success(request, f"Increased {item_name} quantity!")
+        else:
+            messages.error(request, f"Cannot add more {item_name}. Stock limit reached!")
+
+    elif action == 'decrease':
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            cart_item.save()
+            messages.success(request, f"Decreased {item_name} quantity!")
+        else:
+            cart_item.delete()
+            messages.success(request, f"Removed {item_name} from cart!")
+
+    return redirect('customer_dashboard')
 
 def remove_from_cart(request):
     if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-        cart = request.session.get('cart', {})
+        try:
+            product_id = request.POST.get('product_id')
+            cart = get_object_or_404(Cart, user=request.user)
+            
+            # Find and remove cart item
+            cart_item = None
+            try:
+                cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+                item_name = cart_item.product.flavour
+            except CartItem.DoesNotExist:
+                try:
+                    cart_item = CartItem.objects.get(cart=cart, proposal_id=product_id)
+                    item_name = cart_item.proposal.name
+                except CartItem.DoesNotExist:
+                    messages.error(request, "Item not found in cart!")
+                    return redirect('customer_dashboard')
+            
+            cart_item.delete()
+            messages.success(request, f"Removed {item_name} from cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error removing from cart: {str(e)}")
+    
+    return redirect('customer_dashboard')
+
+
+def cart_view(request):
+    try:
+        cart = get_object_or_404(Cart, user=request.user)
+        cart_items = cart.cart_items.all()
         
-        if product_id in cart:
-            del cart[product_id]
-            request.session['cart'] = cart
-            messages.success(request, "Item removed from cart!")
+        items_data = []
+        for item in cart_items:
+            items_data.append({
+                'id': item.product.id if item.product else item.proposal.id,
+                'name': item.get_item_(),
+                'price': float(item.get_item_price()),
+                'quantity': item.quantity,
+                'total': float(item.get_total_price()),
+                'is_proposal': bool(item.proposal)
+            })
         
         return JsonResponse({
-            'success': True,
-            'cart_count': sum(cart.values())
+            'items': items_data,
+            'total': float(cart.get_total_price()),
+            'count': cart.get_total_items()
         })
     
-    return JsonResponse({'success': False})
-
-
-def view_cart(request):
-    cart = request.session.get('cart', {})
-    items = []
-    total = 0
-
-    for product_id, quantity in cart.items():
-        if product_id.startswith('proposal_'):
-            proposal_id = product_id.replace('proposal_', '')
-            try:
-                proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
-                subtotal = float(proposal.price) * quantity
-                total += subtotal
-                items.append({
-                    'product': proposal,
-                    'quantity': quantity,
-                    'subtotal': subtotal,
-                    'product_id': product_id,
-                    'is_proposal': True
-                })
-            except FlavorProposal.DoesNotExist:
-                continue
-        else:
-            # Handle regular products
-            try:
-                product = IceCream.objects.get(id=product_id)
-                subtotal = float(product.price) * quantity
-                total += subtotal
-                items.append({
-                    'product': product,
-                    'quantity': quantity,
-                    'subtotal': subtotal,
-                    'product_id': product_id,
-                    'is_proposal': False
-                })
-            except IceCream.DoesNotExist:
-                continue
-
-    return render(request, 'cart.html', {'items': items, 'total': total})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
 def checkout(request):
-    cart = request.session.get('cart', {})
-    if not cart:
-        return redirect('view_cart')
-
     try:
-        for product_id, quantity in cart.items():
-            if product_id.startswith('proposal_'):
-                # Handle proposal checkout
-                proposal_id = product_id.replace('proposal_', '')
-                proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
-                
-                # Check if proposal has enough stock
-                if hasattr(proposal, 'stock') and proposal.stock < quantity:
-                    messages.error(request, f"Not enough stock for {proposal.name}.")
-                    return redirect('view_cart')
-                
-                # Update proposal stock if it exists
-                if hasattr(proposal, 'stock'):
-                    proposal.stock -= quantity
-                    proposal.save()
-                
-                # Create a sale record for the proposal
-                Sale.objects.create(
-                    product=None,  # For proposals, product is None
-                    quantity_sold=quantity,
-                    customer=request.user,
-                    date_sold=timezone.now().date(),
-                    # You might want to add a proposal field to Sale model
-                )
-            else:
-                # Handle regular product checkout
-                product = get_object_or_404(IceCream, id=product_id)
-
-                if product.stock < quantity:
-                    messages.error(request, f"Not enough stock for {product.name}.")
-                    return redirect('view_cart')
-
-                product.stock -= quantity
-                product.save()
-
-                Sale.objects.create(
-                    product=product,
-                    quantity_sold=quantity,
-                    customer=request.user,
-                    date_sold=timezone.now().date()
-                )
-
-        request.session['cart'] = {}
-        messages.success(request, "Checkout successful!")
-        return render(request, 'checkout_success.html')
+        cart = get_object_or_404(Cart, user=request.user)
+        cart_items = cart.cart_items.all()
         
+        if not cart_items:
+            messages.error(request, "Your cart is empty!")
+            return redirect('customer_dashboard')
+        
+        # Check stock availability
+        for item in cart_items:
+            if item.product:
+                if item.quantity > item.product.stock:
+                    messages.error(request, f"Not enough stock for {item.product.flavour}!")
+                    return redirect('customer_dashboard')
+            elif item.proposal:
+                if item.quantity > item.proposal.stock:
+                    messages.error(request, f"Not enough stock for {item.proposal.name}!")
+                    return redirect('customer_dashboard')
+        
+        total_amount = cart.get_total_price()
+        
+        # Create order with transaction
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user,
+                total_amount=total_amount,
+                status='completed'
+            )
+            
+            # Create order items and update stock
+            for item in cart_items:
+                if item.product:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        quantity=item.quantity,
+                        price=item.product.price
+                    )
+                    # Update stock
+                    item.product.stock -= item.quantity
+                    item.product.save()
+                
+                elif item.proposal:
+                    OrderItem.objects.create(
+                        order=order,
+                        proposal=item.proposal,
+                        quantity=item.quantity,
+                        price=item.proposal.price
+                    )
+                    # Update stock
+                    item.proposal.stock -= item.quantity
+                    item.proposal.save()
+            
+            # Clear cart
+            cart_items.delete()
+            
+            messages.success(request, f"🎉 Purchase Successful! Order #{order.id} has been placed. Total: ${total_amount}")
+            
     except Exception as e:
-        messages.error(request, "An error occurred during checkout. Please try again.")
-        return redirect('view_cart')
-
-@login_required
-def update_cart_item(request):
-    if request.method == 'POST':
-        try:
-            import json
-            data = json.loads(request.body)
-            product_id = data.get('product_id')
-            quantity = int(data.get('quantity', 1))
-            
-            if quantity <= 0:
-                return JsonResponse({
-                    'success': False, 
-                    'message': 'Invalid quantity'
-                }, status=400)
-            
-            cart = request.session.get('cart', {})
-            
-            if product_id in cart:
-                cart[product_id] = quantity
-                request.session['cart'] = cart
-                request.session.modified = True
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Cart updated',
-                    'cart_count': sum(cart.values())
-                })
-            else:
-                return JsonResponse({
-                    'success': False, 
-                    'message': 'Item not found in cart'
-                }, status=404)
-                
-        except (json.JSONDecodeError, ValueError):
-            return JsonResponse({
-                'success': False, 
-                'message': 'Invalid data'
-            }, status=400)
+        messages.error(request, f"Checkout error: {str(e)}")
     
-    return JsonResponse({'success': False, 'message': 'Invalid request'})
-
+    return redirect('customer_dashboard')
 
 @login_required
 def add_flavour(request):
