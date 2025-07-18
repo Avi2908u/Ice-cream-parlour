@@ -366,7 +366,6 @@
                         <label for="id_role">Account Type:</label>
                         <select id="signupUserType" name="signupUserType" required>
                             <option value="">Select Account Type</option>
-                            <option value="owner">Owner</option>
                             <option value="vendor">Vendor</option>
                             <option value="customer">Customer</option>
                         </select>
@@ -374,17 +373,17 @@
                     
                     <div class="form-group">
                         <label for="signupFullName">Full Name:</label>
-                        <input type="text" id="signupFullName" name="signupFullName" placeholder="Enter your full name" required>
+                        <input type="text" id="signupFullName" name="signupFullName" placeholder="Enter your full name" required pattern="^[A-Za-z\s]{2,50}$" title="Only alphabets and spaces, 2-50 characters">
                     </div>
                     
                     <div class="form-group">
                         <label for="signupEmail">Email:</label>
-                        <input type="email" id="signupEmail" name="signupEmail" placeholder="Enter your email" required>
+                        <input type="email" id="signupEmail" name="signupEmail" placeholder="Enter your email" required pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid email address">
                     </div>
                     
                     <div class="form-group">
                         <label for="signupUsername">Username:</label>
-                        <input type="text" id="signupUsername" name="signupUsername" placeholder="Choose a username" required>
+                        <input type="text" id="signupUsername" name="signupUsername" placeholder="Choose a username" required pattern="^[a-zA-Z0-9_]{4,20}$" title="4-20 characters: letters, numbers, underscores only">
                     </div>
                     
                     <div class="form-group">

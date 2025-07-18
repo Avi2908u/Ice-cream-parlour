@@ -85,14 +85,24 @@ def signup_page(request):
             username=username,
             email=email,
             password=password,
-            role=role,
             first_name=name
         )
        
         if role == 'vendor':
            Vendor.objects.create(user=user, shop_name=f"{name}'s Shop")
         user.save()
-        return redirect('login')  
+
+
+        if user:
+            login(request, user)
+            if role == 'vendor':
+                if Vendor.objects.filter(user=user).exists():
+                    return redirect('/vendor/')
+            elif role == 'customer':
+                return redirect('/customer/')  
+        else:
+            return render(request, 'signup.html', {'error': 'Invalid credentials'})
+         
     return render(request, 'signup.html')
 
 @csrf_protect
@@ -267,10 +277,10 @@ def vendor_dashboard(request):
     }
     return render(request, 'vendor.html', context)
 
-
+@login_required
 def get_cart_count(request):
-    cart = request.session.get('cart', {})
-    total_items = sum(cart.values())
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    total_items = sum(item.quantity for item in cart.cart_items.all())
     return JsonResponse({'count': total_items})
 
 @login_required
@@ -278,8 +288,7 @@ def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
     accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
     
-    # Get cart items for display
-    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart = Cart.objects.get_or_create(user=request.user)
     cart_items = cart.cart_items.all()
     cart_total = cart.get_total_price()
         
@@ -515,6 +524,15 @@ def checkout(request):
                     # Update stock
                     item.product.stock -= item.quantity
                     item.product.save()
+
+                    Sale.objects.create(
+                        product=item.product,
+                        quantity_sold=item.quantity,
+                        vendor=item.product.vendor.user,
+                        customer=request.user,
+                        units_sold=item.quantity,
+                        price_per_unit=item.product.price,
+                    )
                 
                 elif item.proposal:
                     OrderItem.objects.create(

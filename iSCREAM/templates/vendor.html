@@ -576,7 +576,7 @@
                <tbody>
     {% for item in report %}
     <tr>
-        <td>{{ item.flavour }}</td>
+        <td>{{ item.name }}</td>
         <td>{{ item.stock }}</td>
         <td>{{ item.sold_today }}</td>
         <td>${{ item.price }}</td>
@@ -584,9 +584,49 @@
     </tr>
     {% endfor %}
 </tbody>
-            </table>
-        </div>
+</table>
+</div>
+
+<div class="table-container" style="margin-top: 2rem;">
+    <div class="table-header">
+        Flavor Proposals (Submitted by You)
     </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Flavor Name</th>
+                <th>Stock</th>
+                <th>Price</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Submitted On</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proposal in proposals %}
+            <tr>
+                <td>{{ proposal.name }}</td>
+                <td>{{ proposal.stock }}</td>
+                <td>${{ proposal.price }}</td>
+                <td>{{ proposal.description }}</td>
+                <td>
+                    {% if proposal.status == 'declined' %}
+                        <span style="color: red;">Declined</span>
+                    {% else %}
+                        <span style="color: white;">{{ proposal.status|capfirst }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ proposal.applied_date|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">No flavor proposals submitted yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
     <div id="proposalModal" class="side-modal">
         <div class="side-modal-content">
             <div class="modal-header">

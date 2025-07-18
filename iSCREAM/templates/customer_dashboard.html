@@ -671,7 +671,7 @@
             {% if cart_items %}
                 {% for item in cart_items %}
                     <div class="cart-item">
-                        <div class="cart-item-name">{{ item.product.flavor }}</div>
+                        <div class="cart-item-name">{{ item.product.flavour }}</div>
                         <div class="cart-item-details">
                             <div class="cart-item-price">${{ item.product.price }}</div>
                             <div class="quantity-controls">
@@ -723,7 +723,6 @@
             <div class="nav-actions">
                 <button class="cart-btn" onclick="toggleCart()">
                     Cart
-                    <span class="cart-count" id="cartCount">{{ cart_items|length|default:0 }}</span>
                 </button>
                 <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
             </div>
@@ -757,7 +756,6 @@
                                 <div class="product-price">${{ icecream.price }}</div>
                                 <p class="product-description">{{ icecream.description|default:"Delicious ice cream flavor" }}</p>
                                 <p class="vendor-info">by {{ vendor.shop_name }}</p>
-                                <p class="stock-info">Stock: {{ icecream.stock }} available</p>
                                 
                                 {% if icecream.stock > 0 %}
                                     <form method="post" action="{% url 'add_to_cart' icecream.id %}">
@@ -774,43 +772,9 @@
             {% endif %}
         {% endfor %}
 
-        <!-- Approved Proposals -->
-        {% if accepted_proposals %}
-            <div class="customer-section">
-                <h2 class="section-title">🌟 New Approved Flavors</h2>
-                <div class="product-grid">
-                    {% for proposal in accepted_proposals %}
-                        <div class="product-card">
-                            <div class="product-image">
-                                {% if proposal.image %}
-                                    <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}">
-                                {% else %}
-                                    <div style="color: var(--primary-brown); font-size: 3em;">🍦</div>
-                                {% endif %}
-                            </div>
-                            <h3>{{ proposal.name }}</h3>
-                            <div class="product-price">${{ proposal.price }}</div>
-                            <p class="product-description">{{ proposal.description }}</p>
-                            <p class="vendor-info">by {{ proposal.vendor.username }}</p>
-                            <p class="stock-info">Stock: {{ proposal.stock }} available</p>
-                            
-                            {% if proposal.stock > 0 %}
-                                <form method="post" action="{% url 'add_proposal_to_cart' proposal.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="add-to-cart-btn">Add to Cart</button>
-                                </form>
-                            {% else %}
-                                <button class="add-to-cart-btn" disabled>Out of Stock</button>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-
-    </div>
-
+        
     <script>
+        
         // Toggle Cart Sidebar
         function toggleCart() {
             const sidebar = document.getElementById('cartSidebar');
