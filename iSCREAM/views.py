@@ -269,7 +269,6 @@ def vendor_dashboard(request):
     return render(request, 'vendor.html', context)
 
 
-@login_required
 def get_cart_count(request):
     cart = request.session.get('cart', {})
     total_items = sum(cart.values())
@@ -279,15 +278,13 @@ def get_cart_count(request):
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
     accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
-    
-    # Get cart items for display
     cart = request.session.get('cart', {})
     cart_items = []
     total = 0
     
     for product_id, quantity in cart.items():
         if product_id.startswith('proposal_'):
-            # Handle proposal items
+            
             proposal_id = product_id.replace('proposal_', '')
             try:
                 proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
@@ -325,8 +322,6 @@ def customer_dashboard(request):
         'cart_total': total
     })
 
-
-@login_required
 def add_to_cart(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(IceCream, id=product_id)
@@ -349,14 +344,9 @@ def add_to_cart(request, product_id):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 
-@login_required
 def add_proposal_to_cart(request, proposal_id):
     if request.method == 'POST':
         proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
-        
-        # Create a temporary IceCream object or handle proposals separately
-        # For now, let's assume proposals are converted to IceCream objects when approved
-        # You might need to modify this based on your actual data structure
         
         cart = request.session.get('cart', {})
         cart_key = f"proposal_{proposal_id}"
@@ -378,11 +368,10 @@ def add_proposal_to_cart(request, proposal_id):
     return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 
-@login_required
 def update_cart_quantity(request):
     if request.method == 'POST':
         product_id = request.POST.get('product_id')
-        action = request.POST.get('action')  # 'increase' or 'decrease'
+        action = request.POST.get('action')  
         
         cart = request.session.get('cart', {})
         
@@ -405,7 +394,6 @@ def update_cart_quantity(request):
     return JsonResponse({'success': False})
 
 
-@login_required
 def remove_from_cart(request):
     if request.method == 'POST':
         product_id = request.POST.get('product_id')
@@ -424,7 +412,6 @@ def remove_from_cart(request):
     return JsonResponse({'success': False})
 
 
-@login_required
 def view_cart(request):
     cart = request.session.get('cart', {})
     items = []
@@ -432,11 +419,10 @@ def view_cart(request):
 
     for product_id, quantity in cart.items():
         if product_id.startswith('proposal_'):
-            # Handle proposal items
             proposal_id = product_id.replace('proposal_', '')
             try:
                 proposal = FlavorProposal.objects.get(id=proposal_id, status='approved')
-                subtotal = proposal.price * quantity
+                subtotal = float(proposal.price) * quantity
                 total += subtotal
                 items.append({
                     'product': proposal,
@@ -451,7 +437,7 @@ def view_cart(request):
             # Handle regular products
             try:
                 product = IceCream.objects.get(id=product_id)
-                subtotal = product.price * quantity
+                subtotal = float(product.price) * quantity
                 total += subtotal
                 items.append({
                     'product': product,
@@ -465,52 +451,105 @@ def view_cart(request):
 
     return render(request, 'cart.html', {'items': items, 'total': total})
 
-
-# Keep your existing checkout and other functions as they are
 @login_required
 def checkout(request):
     cart = request.session.get('cart', {})
     if not cart:
         return redirect('view_cart')
 
-    for product_id, quantity in cart.items():
-        if product_id.startswith('proposal_'):
-            # Handle proposal checkout - you may need to create IceCream objects
-            proposal_id = product_id.replace('proposal_', '')
-            proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
+    try:
+        for product_id, quantity in cart.items():
+            if product_id.startswith('proposal_'):
+                # Handle proposal checkout
+                proposal_id = product_id.replace('proposal_', '')
+                proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='approved')
+                
+                # Check if proposal has enough stock
+                if hasattr(proposal, 'stock') and proposal.stock < quantity:
+                    messages.error(request, f"Not enough stock for {proposal.name}.")
+                    return redirect('view_cart')
+                
+                # Update proposal stock if it exists
+                if hasattr(proposal, 'stock'):
+                    proposal.stock -= quantity
+                    proposal.save()
+                
+                # Create a sale record for the proposal
+                Sale.objects.create(
+                    product=None,  # For proposals, product is None
+                    quantity_sold=quantity,
+                    customer=request.user,
+                    date_sold=timezone.now().date(),
+                    # You might want to add a proposal field to Sale model
+                )
+            else:
+                # Handle regular product checkout
+                product = get_object_or_404(IceCream, id=product_id)
+
+                if product.stock < quantity:
+                    messages.error(request, f"Not enough stock for {product.name}.")
+                    return redirect('view_cart')
+
+                product.stock -= quantity
+                product.save()
+
+                Sale.objects.create(
+                    product=product,
+                    quantity_sold=quantity,
+                    customer=request.user,
+                    date_sold=timezone.now().date()
+                )
+
+        request.session['cart'] = {}
+        messages.success(request, "Checkout successful!")
+        return render(request, 'checkout_success.html')
+        
+    except Exception as e:
+        messages.error(request, "An error occurred during checkout. Please try again.")
+        return redirect('view_cart')
+
+@login_required
+def update_cart_item(request):
+    if request.method == 'POST':
+        try:
+            import json
+            data = json.loads(request.body)
+            product_id = data.get('product_id')
+            quantity = int(data.get('quantity', 1))
             
-            # Create a sale record for the proposal
-            Sale.objects.create(
-                product=None,  # You might want to create an IceCream object first
-                quantity_sold=quantity,
-                customer=request.user,
-                date_sold=timezone.now().date()
-            )
-        else:
-            product = get_object_or_404(IceCream, id=product_id)
-
-            if product.stock < quantity:
-                return render(request, 'cart.html', {
-                    'items': [],
-                    'total': 0,
-                    'error': f"Not enough stock for {product.name}."
+            if quantity <= 0:
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Invalid quantity'
+                }, status=400)
+            
+            cart = request.session.get('cart', {})
+            
+            if product_id in cart:
+                cart[product_id] = quantity
+                request.session['cart'] = cart
+                request.session.modified = True
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Cart updated',
+                    'cart_count': sum(cart.values())
                 })
+            else:
+                return JsonResponse({
+                    'success': False, 
+                    'message': 'Item not found in cart'
+                }, status=404)
+                
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({
+                'success': False, 
+                'message': 'Invalid data'
+            }, status=400)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
 
-            product.stock -= quantity
-            product.save()
 
-            Sale.objects.create(
-                product=product,
-                quantity_sold=quantity,
-                customer=request.user,
-                date_sold=timezone.now().date()
-            )
-
-    request.session['cart'] = {}
-    return render(request, 'checkout_success.html')
-
-
-# Your existing functions remain the same
 @login_required
 def add_flavour(request):
     vendor = get_object_or_404(Vendor, user=request.user)
@@ -526,7 +565,6 @@ def add_flavour(request):
         form = IceCreamForm()
 
     return render(request, 'add_flavour.html', {'form': form})
-
 
 def submit_flavour_proposal(request):
     if request.method == 'POST':

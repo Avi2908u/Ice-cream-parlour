@@ -199,7 +199,7 @@
         @keyframes float {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-20px) rotate(180deg); }
-        }
+        } 
 
         .welcome-message {
             background: rgba(255, 255, 255, 0.1);
@@ -693,9 +693,7 @@
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
-                <button class="btn btn-secondary" onclick="toggleCart()">
-                    Cart (<span id="cart-count">0</span>)
-                </button>
+                <button class="btn btn-secondary" onclick="toggleCart()"> Cart</button>
                 <button class="btn btn-primary" onclick="window.location.href='/login/'">Logout</button>
         </nav>
 
@@ -725,7 +723,7 @@
                                 {% if proposal.image %}
                                     <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
                                 {% endif %}
-                                <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
+                                <button class="add-to-cart-btn" onclick="add_proposal_to_cart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
                                     Add to Cart
                                 </button>
                             </div>
@@ -790,9 +788,16 @@
             }
         }
 
+        function get_cart_count(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                cartCountElement.textContent = count;
+            }
+        }
+
         // Add regular ice cream product to cart
-        function addToCart(productId, productName, productPrice) {
-            fetch(`/add-to-cart/${productId}/`, {
+        function add_to_cart(productId, productName, productPrice) {
+            fetch(`/add_to_cart/${productId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,
@@ -817,8 +822,8 @@
         }
 
         // Add approved proposal to cart
-        function addProposalToCart(proposalId, proposalName, proposalPrice) {
-            fetch(`/add-proposal-to-cart/${proposalId}/`, {
+        function add_proposal_to_cart(proposalId, proposalName, proposalPrice) {
+            fetch(`/add_proposal_to_cart/${proposalId}/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,
@@ -843,12 +848,12 @@
         }
 
         // Update cart item quantity
-        function updateQuantity(productId, action) {
+        function update_cart_quantity(productId, action) {
             const formData = new FormData();
             formData.append('product_id', productId);
             formData.append('action', action);
 
-            fetch('/update-cart-quantity/', {
+            fetch('/update_cart_quantity/', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,
@@ -871,11 +876,11 @@
         }
 
         // Remove item from cart
-        function removeFromCart(productId) {
+        function remove_from_cart(productId) {
             const formData = new FormData();
             formData.append('product_id', productId);
 
-            fetch('/remove-from-cart/', {
+            fetch('/remove_from_cart/', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrftoken,
@@ -899,20 +904,15 @@
         }
 
         // Update cart count display
-        function updateCartCount(count) {
+        function update_cart_count(count) {
             const cartCountElement = document.getElementById('cart-count');
             if (cartCountElement) {
                 cartCountElement.textContent = count;
             }
         }
 
-        // Refresh cart items display
-        function refreshCartItems() {
-            loadCartItems();
-        }
-
         // Load cart items from server
-        function loadCartItems() {
+        function view_cart() {
             fetch('/get_cart_count/', {
                 method: 'GET',
                 headers: {

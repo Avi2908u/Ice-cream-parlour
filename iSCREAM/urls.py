@@ -22,13 +22,14 @@ urlpatterns = [
     path('approve-proposal/<int:proposal_id>/', views.approve_proposal, name='approve_proposal'),
     path('reject-proposal/<int:proposal_id>/', views.reject_proposal, name='reject_proposal'),
 
-    # Add these to your urls.py file:
+    path('get_cart_count/', views.get_cart_count, name='get_cart_count'),
     path('add_to_cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
     path('add_proposal_to_cart/<int:proposal_id>/', views.add_proposal_to_cart, name='add_proposal_to_cart'),
     path('update_cart_quantity/', views.update_cart_quantity, name='update_cart_quantity'),
+    path('update_cart_item/', views.update_cart_item, name='update_cart_item'), 
     path('remove_from_cart/', views.remove_from_cart, name='remove_from_cart'),
-    path('get_cart_count/', views.get_cart_count, name='get_cart_count'),
-    path('view_cart/', views.view_cart, name='view_cart'),
+    path('view_cart/', views.view_cart, name = 'view_cart'),
     path('checkout/', views.checkout, name='checkout'),
     
 ]
+  

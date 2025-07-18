@@ -10,3 +10,5 @@ class FlavourProposalForm(forms.ModelForm):
     class Meta:
         model = FlavorProposal
         fields = ['name', 'description']
+
+

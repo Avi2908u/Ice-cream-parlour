@@ -72,3 +72,4 @@ class Sale(models.Model):
 
     def revenue(self):
         return self.quantity_sold * self.product.price
+    
