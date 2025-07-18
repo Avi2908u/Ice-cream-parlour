@@ -46,16 +46,69 @@ class FlavorProposal(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.status}"
+    
+class Cart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Cart for {self.user.username}"
+    
+    def get_total_price(self):
+        return sum(item.get_total_price() for item in self.cart_items.all())
+    
+    def get_total_items(self):
+        return sum(item.quantity for item in self.cart_items.all())
+
 
 
 class CartItem(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey('IceCream', on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
-
-    def __str__(self):
-        return f"{self.product.flavour} ({self.quantity})"  
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey(IceCream, on_delete=models.CASCADE, null=True, blank=True)
+    proposal = models.ForeignKey(FlavorProposal, on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1)    
+    class Meta:
+        unique_together = [['cart', 'product'], ['cart', 'proposal']]
     
+    def get_total_price(self):
+        if self.product:
+            return self.product.price * self.quantity
+        elif self.proposal:
+            return self.proposal.price * self.quantity
+        return 0
+    
+    def get_item_name(self):
+        if self.product:
+            return self.product.flavour
+        elif self.proposal:
+            return self.proposal.name
+        return "Unknown Item"
+    
+    def get_item_price(self):
+        if self.product:
+            return self.product.price
+        elif self.proposal:
+            return self.proposal.price
+        return 0
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Order #{self.id} - {self.user.username}"
+ 
 class Sale(models.Model):
     product = models.ForeignKey(IceCream, on_delete=models.CASCADE)
     quantity_sold = models.PositiveIntegerField()
@@ -72,3 +125,12 @@ class Sale(models.Model):
 
     def revenue(self):
         return self.quantity_sold * self.product.price
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
+    product = models.ForeignKey(IceCream, on_delete=models.CASCADE, null=True, blank=True)
+    proposal = models.ForeignKey(FlavorProposal, on_delete=models.CASCADE, null=True, blank=True)
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    
+    def get_total_price(self):
+        return self.price * self.quantity

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect ,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from .models import Sale, IceCream, CartItem, Vendor, User, FlavorProposal
+from .models import IceCream, CartItem, Vendor, User, FlavorProposal,Cart, Sale, OrderItem, Order
 from .forms import IceCreamForm
 from django.db.models import Sum, F, FloatField, ExpressionWrapper
 from datetime import date
@@ -15,8 +15,8 @@ from .serializers import UserSerializer, VendorIceCreamSerializer, IceCreamSeria
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.views.decorators.http import require_POST
-
-
+from django.db import transaction
+from django.http import JsonResponse
 
 
 class RegisterView(generics.CreateAPIView):
@@ -267,85 +267,278 @@ def vendor_dashboard(request):
     }
     return render(request, 'vendor.html', context)
 
+
+@login_required
+def get_cart_count(request):
+    cart = request.session.get('cart', {})
+    total_items = sum(cart.values())
+    return JsonResponse({'count': total_items})
+
 @login_required
 def customer_dashboard(request):
     vendors = Vendor.objects.prefetch_related('icecreams').all() 
     accepted_proposals = FlavorProposal.objects.filter(status='approved').select_related('vendor')
     
-    return render(request, 'customer_dashboard.html', {
-        'vendors': vendors,  
-        'accepted_proposals': accepted_proposals
-    })
-
+    # Get cart items for display
+    cart, created = Cart.objects.get_or_create(user=request.user)
+    cart_items = cart.cart_items.all()
+    cart_total = cart.get_total_price()
+        
+    context = {
+            'vendors': vendors,
+            'accepted_proposals': accepted_proposals,
+            'cart_items': cart_items,
+            'cart_total': cart_total,
+        }
+        
+    return render(request, 'customer_dashboard.html', context)
+    
 def logout_view(request):
     logout(request)
     return redirect('/login/') 
 
 @login_required
 def add_to_cart(request, product_id):
-    product = get_object_or_404(IceCream, id=product_id)
-    cart = request.session.get('cart',{})
-    if str(product_id) in cart:
-        cart[str(product_id)] += 1
-    else:
-        cart[str(product_id)] = 1
-
-    request.session['cart'] = cart
-    return redirect('customer/')
-
-@login_required
-def update_cart_quantity(request, product_id, action):
-    cart = request.session.get('cart', {})
-    product_id = str(product_id)
-
-    if product_id in cart:
-        if action == 'increase':
-            cart[product_id] += 1
-        elif action == 'decrease':
-            cart[product_id] -= 1
-            if cart[product_id] <= 0:
-                del cart[product_id]
-    
-    request.session['cart'] = cart
-    return redirect('view_cart')
-
-@login_required
-def buy_ice_cream(request):
-    if request.method == 'POST':
-        cart = request.session.get('cart', {})
-
-        if not cart:
-            messages.error(request, "Your cart is empty.")
-            return redirect('/customer/')
-
-        for product_id, quantity in cart.items():
-           product = get_object_or_404(IceCream, id=product_id)
-
-           if product.stock < quantity:
-              messages.error(request, f"Not enough stock for {product.name}. Only {product.stock} available.")
-              return redirect('view_cart')
-
-    # Deduct stock and record sales
-        for product_id, quantity in cart.items():
-           product = get_object_or_404(IceCream, id=product_id)
-           product.stock -= quantity
-           product.save()
-
-           Sale.objects.create(
-              product=product,
-              customer=request.user,
-              quantity_sold=quantity,
-              date_sold=timezone.now().date()
+   if request.method == 'POST':
+        try:
+            icecream = get_object_or_404(IceCream, id=product_id)
+            
+            # Check stock
+            if icecream.stock <= 0:
+                messages.error(request, f"{icecream.flavour} is out of stock!")
+                return redirect('customer_dashboard')
+            
+            # Get or create cart
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                product=icecream,
+                defaults={'quantity': 1}
             )
+            
+            if not created:
+                # Check if we can add more
+                if cart_item.quantity >= icecream.stock:
+                    messages.error(request, f"Cannot add more {icecream.flavour}. Stock limit reached!")
+                    return redirect('customer_dashboard')
+                
+                cart_item.quantity += 1
+                cart_item.save()
+                messages.success(request, f"Added another {icecream.flavour} to cart!")
+            else:
+                messages.success(request, f"Added {icecream.flavour} to cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error adding to cart: {str(e)}")
+   return redirect('customer_dashboard')
 
-    # Clear cart
-        request.session['cart'] = {}
-        request.session.modified = True
-
-        messages.success(request, "Purchase successful!")
-        return redirect('/customer/')
-    return redirect('/customer/')
+@login_required
+def add_proposal_to_cart(request, proposal_id):
+    """Add approved proposal to cart"""
+    if request.method == 'POST':
+        try:
+            proposal = get_object_or_404(FlavorProposal, id=proposal_id, status='accepted')
+            
+            # Check stock
+            if proposal.stock <= 0:
+                messages.error(request, f"{proposal.name} is out of stock!")
+                return redirect('customer_dashboard')
+            
+            # Get or create cart
+            cart, created = Cart.objects.get_or_create(user=request.user)
+            
+            # Get or create cart item
+            cart_item, created = CartItem.objects.get_or_create(
+                cart=cart,
+                proposal=proposal,
+                defaults={'quantity': 1}
+            )
+            
+            if not created:
+                # Check if we can add more
+                if cart_item.quantity >= proposal.stock:
+                    messages.error(request, f"Cannot add more {proposal.name}. Stock limit reached!")
+                    return redirect('customer_dashboard')
+                
+                cart_item.quantity += 1
+                cart_item.save()
+                messages.success(request, f"Added another {proposal.name} to cart!")
+            else:
+                messages.success(request, f"Added {proposal.name} to cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error adding to cart: {str(e)}")
     
+    return redirect('customer_dashboard')
+
+
+@login_required
+@require_POST
+def update_cart_quantity(request):
+    """Update cart item quantity"""
+    product_id = request.POST.get('product_id')
+    action = request.POST.get('action')
+    cart = get_object_or_404(Cart, user=request.user)
+
+    cart_item = None
+    max_stock = 0
+    item_name = ''
+
+    try:
+        # Try to find cart item as a regular product
+        cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+        max_stock = cart_item.product.stock
+        item_name = cart_item.product.flavour
+    except CartItem.DoesNotExist:
+        try:
+            # Try as a proposal item
+            cart_item = CartItem.objects.get(cart=cart, proposal_id=product_id)
+            max_stock = cart_item.proposal.stock
+            item_name = cart_item.proposal.name
+        except CartItem.DoesNotExist:
+            messages.error(request, "Item not found in cart!")
+            return redirect('customer_dashboard')
+
+    if action == 'increase':
+        if cart_item.quantity < max_stock:
+            cart_item.quantity += 1
+            cart_item.save()
+            messages.success(request, f"Increased {item_name} quantity!")
+        else:
+            messages.error(request, f"Cannot add more {item_name}. Stock limit reached!")
+
+    elif action == 'decrease':
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            cart_item.save()
+            messages.success(request, f"Decreased {item_name} quantity!")
+        else:
+            cart_item.delete()
+            messages.success(request, f"Removed {item_name} from cart!")
+
+    return redirect('customer_dashboard')
+
+@login_required
+def remove_from_cart(request):
+    if request.method == 'POST':
+        try:
+            product_id = request.POST.get('product_id')
+            cart = get_object_or_404(Cart, user=request.user)
+            
+            # Find and remove cart item
+            cart_item = None
+            try:
+                cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
+                item_name = cart_item.product.flavour
+            except CartItem.DoesNotExist:
+                try:
+                    cart_item = CartItem.objects.get(cart=cart, proposal_id=product_id)
+                    item_name = cart_item.proposal.name
+                except CartItem.DoesNotExist:
+                    messages.error(request, "Item not found in cart!")
+                    return redirect('customer_dashboard')
+            
+            cart_item.delete()
+            messages.success(request, f"Removed {item_name} from cart!")
+            
+        except Exception as e:
+            messages.error(request, f"Error removing from cart: {str(e)}")
+    
+    return redirect('customer_dashboard')
+
+
+def cart_view(request):
+    try:
+        cart = get_object_or_404(Cart, user=request.user)
+        cart_items = cart.cart_items.all()
+        
+        items_data = []
+        for item in cart_items:
+            items_data.append({
+                'id': item.product.id if item.product else item.proposal.id,
+                'name': item.get_item_(),
+                'price': float(item.get_item_price()),
+                'quantity': item.quantity,
+                'total': float(item.get_total_price()),
+                'is_proposal': bool(item.proposal)
+            })
+        
+        return JsonResponse({
+            'items': items_data,
+            'total': float(cart.get_total_price()),
+            'count': cart.get_total_items()
+        })
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def checkout(request):
+    try:
+        cart = get_object_or_404(Cart, user=request.user)
+        cart_items = cart.cart_items.all()
+        
+        if not cart_items:
+            messages.error(request, "Your cart is empty!")
+            return redirect('customer_dashboard')
+        
+        # Check stock availability
+        for item in cart_items:
+            if item.product:
+                if item.quantity > item.product.stock:
+                    messages.error(request, f"Not enough stock for {item.product.flavour}!")
+                    return redirect('customer_dashboard')
+            elif item.proposal:
+                if item.quantity > item.proposal.stock:
+                    messages.error(request, f"Not enough stock for {item.proposal.name}!")
+                    return redirect('customer_dashboard')
+        
+        total_amount = cart.get_total_price()
+        
+        # Create order with transaction
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=request.user,
+                total_amount=total_amount,
+                status='completed'
+            )
+            
+            # Create order items and update stock
+            for item in cart_items:
+                if item.product:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        quantity=item.quantity,
+                        price=item.product.price
+                    )
+                    # Update stock
+                    item.product.stock -= item.quantity
+                    item.product.save()
+                
+                elif item.proposal:
+                    OrderItem.objects.create(
+                        order=order,
+                        proposal=item.proposal,
+                        quantity=item.quantity,
+                        price=item.proposal.price
+                    )
+                    # Update stock
+                    item.proposal.stock -= item.quantity
+                    item.proposal.save()
+            
+            # Clear cart
+            cart_items.delete()
+            
+            messages.success(request, f"🎉 Purchase Successful! Order #{order.id} has been placed. Total: ${total_amount}")
+            
+    except Exception as e:
+        messages.error(request, f"Checkout error: {str(e)}")
+    
+    return redirect('customer_dashboard')
+
 @login_required
 def add_flavour(request):
     vendor = get_object_or_404(Vendor, user=request.user)
@@ -362,15 +555,15 @@ def add_flavour(request):
 
     return render(request, 'add_flavour.html', {'form': form})
 
+
 def submit_flavour_proposal(request):
     if request.method == 'POST':
-        vendor= request.user
+        vendor = request.user
         name = request.POST.get('flavor_name')
         description = request.POST.get('description')
         price = request.POST.get('base_price')
         image = request.FILES.get('image')  
         stock = request.POST.get('stock')  
-
 
         if not name or not description:
             messages.error(request, "Please fill out both fields.")
@@ -390,5 +583,3 @@ def submit_flavour_proposal(request):
         return redirect('/vendor/')
     
     return redirect('/vendor/')
-    
-

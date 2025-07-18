@@ -14,9 +14,7 @@ urlpatterns = [
     path('owner/', views.owner_dashboard, name='owner_dashboard'),
     path('vendor/', views.vendor_dashboard, name='vendor_dashboard'),
     path('customer/', views.customer_dashboard, name='customer_dashboard'),
-    path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
-    path('customer/update/<int:product_id>/<str:action>/', views.update_cart_quantity, name='update_cart_quantity'),
-    path('customer/checkout/', views.buy_ice_cream, name='buy_ice_cream'),
+    path('checkout/', views.checkout, name='checkout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -26,6 +24,14 @@ urlpatterns = [
     path('approve-proposal/<int:proposal_id>/', views.approve_proposal, name='approve_proposal'),
     path('reject-proposal/<int:proposal_id>/', views.reject_proposal, name='reject_proposal'),
 
+    # Add these to your urls.py file:
+    path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('add-proposal-to-cart/<int:proposal_id>/', views.add_proposal_to_cart, name='add_proposal_to_cart'),
+    path('update-cart-quantity/', views.update_cart_quantity, name='update_cart_quantity'),
+    path('remove-from-cart/', views.remove_from_cart, name='remove_from_cart'),
+    path('get-cart-count/', views.get_cart_count, name='get_cart_count'),
+    path('checkout/', views.checkout, name='checkout'),
+    
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
