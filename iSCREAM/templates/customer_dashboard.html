@@ -520,6 +520,7 @@
         <!-- Navigation Bar -->
         <nav class="navbar">
             <div class="logo">iSCREAM</div>
+
             <div class="nav-actions">
                 <button class="btn btn-primary" id="cart-toggle-btn">Cart</button>
                 <a class="btn btn-primary" href="{% url 'logout' %}">Logout</a>
@@ -552,25 +553,51 @@
                             {% if proposal.image %}
                             <img src="{{ proposal.image.url }}" alt="{{ proposal.name }}" style="max-width: 100%; height: 150px; object-fit: cover; border-radius: 5px; margin: 10px 0;">
                             {% endif %}
-                            <button class="add-to-cart-btn" onclick="addProposalToCart({{ proposal.id }}, '{{ proposal.name }}', {{ proposal.price }})">
-                                Add to Cart
-                            </button>
+                            <form method="POST" action="{% url 'add_to_cart' proposal.id %}">
+    {% csrf_token %}
+    <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+</form>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
             </div>
-            {% endif %}
+        {% endif %}
+    </div>
+
+
         </div>
-        <div id="cart-sidebar" class="cart-sidebar">
-            <h3>Your Cart</h3>
-            <ul id="cart-items"></ul>
-            <div class="cart-total" id="cart-total">Total: $0.00</div>
-            <form action="{% url 'buy_ice_cream' %}" method="post">
-                        {% csrf_token %}
-            <button onclick="checkout()">Checkout</button>
-            </form>
-        </div>
+      <div id="cart-sidebar" class="cart-sidebar">
+    <h3>Your Cart</h3>
+
+    {% if cart_items %}
+        <ul>
+            {% for item in cart_items %}
+            <li>
+                {{ item.product.name }} × {{ item.quantity }} — ${{ item.subtotal }}
+
+                <form method="POST" action="{% url 'update_cart' item.product.id 'increase' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">+</button>
+                </form>
+                <form method="POST" action="{% url 'update_cart' item.product.id 'decrease' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">-</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="cart-total">Total: ${{ cart_total }}</div>
+
+        <form method="POST" action="{% url 'buy_ice_cream' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Checkout</button>
+        </form>
+    {% else %}
+        <p>Your cart is empty.</p>
+    {% endif %}
+</div>
     <script>
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('cart-toggle-btn');
@@ -591,7 +618,6 @@ document.addEventListener('DOMContentLoaded', function () {
 function checkout() {
    alert("Checkout logic not implemented yet.");
  }
-  
 </script>
 
 </body>

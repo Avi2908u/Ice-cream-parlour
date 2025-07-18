@@ -291,7 +291,7 @@ def add_to_cart(request, product_id):
         cart[str(product_id)] = 1
 
     request.session['cart'] = cart
-    return redirect('customer_dashboard')
+    return redirect('customer/')
 
 @login_required
 def update_cart_quantity(request, product_id, action):
@@ -364,7 +364,6 @@ def add_flavour(request):
 
 def submit_flavour_proposal(request):
     if request.method == 'POST':
-        print("svbsdvbs")
         vendor= request.user
         name = request.POST.get('flavor_name')
         description = request.POST.get('description')
